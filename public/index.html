@@ -1,0 +1,1242 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>일곱 개의 대죄: 오리진 — 리오네스 맵</title>
+  <style>
+    /* ===== Reset & Base ===== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #0d0a1e;
+      color: #e8d9a0;
+      font-family: 'Segoe UI', 'Noto Sans KR', sans-serif;
+      overflow: hidden;
+      height: 100vh;
+      width: 100vw;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ===== Top Bar ===== */
+    #topbar {
+      flex-shrink: 0;
+      height: 54px;
+      background: linear-gradient(180deg, #1a1030 0%, #110d22 100%);
+      border-bottom: 2px solid #4a3870;
+      display: flex;
+      align-items: center;
+      padding: 0 18px;
+      gap: 12px;
+      z-index: 200;
+      box-shadow: 0 2px 12px #000a;
+    }
+    #topbar h1 {
+      font-size: 17px;
+      font-weight: 700;
+      color: #f0dc88;
+      text-shadow: 0 0 10px #f0b03088;
+      letter-spacing: 1px;
+      flex: 1;
+    }
+    .tb-btn {
+      background: linear-gradient(135deg, #3a2860, #251848);
+      border: 1.5px solid #6a50a0;
+      color: #d4b8f8;
+      border-radius: 8px;
+      padding: 6px 14px;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all .2s;
+      white-space: nowrap;
+    }
+    .tb-btn:hover { background: linear-gradient(135deg, #5a3890, #3a2868); color: #fff; border-color: #9a70d8; }
+    .tb-btn.active { background: linear-gradient(135deg, #7a3020, #5a1808); border-color: #d05030; color: #ffc8a0; }
+    .tb-btn.danger { background: linear-gradient(135deg, #6a1820, #4a0810); border-color: #c03028; color: #ffb0a0; }
+
+    /* ===== Main Layout ===== */
+    #main {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* ===== Left Sidebar ===== */
+    #sidebar {
+      width: 280px;
+      flex-shrink: 0;
+      background: linear-gradient(180deg, #1a1030ee, #110d22ee);
+      border-right: 2px solid #4a3870;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      z-index: 100;
+    }
+    #sidebar-header {
+      padding: 14px 16px 10px;
+      border-bottom: 1px solid #3a2860;
+      font-size: 13px;
+      color: #a888d8;
+      font-weight: 600;
+      letter-spacing: .5px;
+    }
+    #marker-type-panel {
+      padding: 12px 10px;
+      border-bottom: 1px solid #3a2860;
+    }
+    #marker-type-panel .panel-title {
+      font-size: 11px;
+      color: #7868a0;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .marker-types {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+    }
+    .mt-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      padding: 8px 4px;
+      border-radius: 8px;
+      border: 1.5px solid #3a2860;
+      background: #1e1438;
+      cursor: pointer;
+      transition: all .2s;
+      font-size: 10px;
+      color: #a898c8;
+    }
+    .mt-btn:hover { border-color: #7a58c0; background: #2a1a50; }
+    .mt-btn.selected { border-color: #f0b030; background: #2a1a30; color: #f0d060; }
+    .mt-btn .icon { font-size: 22px; line-height: 1; }
+    .mt-btn .lbl { font-size: 9.5px; text-align: center; line-height: 1.2; }
+
+    /* Chest SVG icon */
+    .chest-icon {
+      width: 28px;
+      height: 22px;
+      display: block;
+    }
+
+    /* marker list */
+    #marker-list-wrap {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px 0;
+    }
+    #marker-list-wrap::-webkit-scrollbar { width: 5px; }
+    #marker-list-wrap::-webkit-scrollbar-track { background: #110d22; }
+    #marker-list-wrap::-webkit-scrollbar-thumb { background: #4a3870; border-radius: 4px; }
+
+    .marker-group-title {
+      padding: 6px 14px 3px;
+      font-size: 10px;
+      color: #7868a0;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .marker-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 12px;
+      cursor: pointer;
+      border-radius: 6px;
+      margin: 1px 6px;
+      transition: background .15s;
+      font-size: 12px;
+    }
+    .marker-item:hover { background: #2a1a50; }
+    .marker-item.focused { background: #3a2060; }
+    .marker-item .mi-icon { font-size: 18px; flex-shrink: 0; }
+    .marker-item .mi-info { flex: 1; min-width: 0; }
+    .marker-item .mi-name { color: #d4b8f8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .marker-item .mi-coord { font-size: 10px; color: #7868a0; }
+    .marker-item .mi-del {
+      opacity: 0;
+      background: none;
+      border: none;
+      color: #d04040;
+      cursor: pointer;
+      font-size: 16px;
+      padding: 2px 4px;
+      border-radius: 4px;
+      transition: opacity .15s, background .15s;
+    }
+    .marker-item:hover .mi-del { opacity: 1; }
+    .marker-item .mi-del:hover { background: #4a1010; }
+
+    #no-markers {
+      text-align: center;
+      color: #5848a0;
+      font-size: 12px;
+      padding: 20px;
+      line-height: 1.7;
+    }
+
+    /* count badges */
+    #sidebar-stats {
+      padding: 10px 14px;
+      border-top: 1px solid #3a2860;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .stat-badge {
+      background: #1e1438;
+      border: 1px solid #3a2860;
+      border-radius: 6px;
+      padding: 4px 8px;
+      font-size: 11px;
+      color: #a888d8;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    /* ===== Map Viewport ===== */
+    #map-viewport {
+      flex: 1;
+      overflow: hidden;
+      position: relative;
+      cursor: crosshair;
+      background: radial-gradient(ellipse at 50% 50%, #1a1238, #0a0818);
+    }
+    #map-viewport.mode-select { cursor: default; }
+    #map-viewport.mode-delete { cursor: not-allowed; }
+
+    #map-container {
+      position: absolute;
+      top: 0; left: 0;
+      width: 3000px;
+      height: 3000px;
+      transform-origin: 0 0;
+    }
+    #map-img {
+      width: 3000px;
+      height: 3000px;
+      display: block;
+      image-rendering: -webkit-optimize-contrast;
+      image-rendering: crisp-edges;
+      pointer-events: none;
+      user-select: none;
+    }
+    #marker-layer {
+      position: absolute;
+      top: 0; left: 0;
+      width: 3000px;
+      height: 3000px;
+      pointer-events: none;
+    }
+
+    /* ===== Marker DOM elements ===== */
+    .map-marker {
+      position: absolute;
+      transform: translate(-50%, -100%);
+      cursor: pointer;
+      pointer-events: all;
+      z-index: 10;
+      transition: transform .1s;
+      filter: drop-shadow(0 2px 6px #000c);
+    }
+    .map-marker:hover { transform: translate(-50%, -100%) scale(1.2); z-index: 50; }
+    .map-marker.focused { transform: translate(-50%, -100%) scale(1.25); z-index: 60; filter: drop-shadow(0 0 8px #f0b03088); }
+
+    .marker-pin {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+    }
+    .marker-bubble {
+      background: #1e1438ee;
+      border: 2px solid;
+      border-radius: 10px;
+      padding: 5px 7px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      min-width: 42px;
+    }
+    .marker-bubble-icon { font-size: 22px; line-height: 1; }
+    .marker-bubble-label {
+      font-size: 10px;
+      color: #e8d9a0;
+      text-align: center;
+      max-width: 80px;
+      word-break: break-all;
+      line-height: 1.2;
+    }
+    .marker-tail {
+      width: 0; height: 0;
+      border-left: 6px solid transparent;
+      border-right: 6px solid transparent;
+      border-top: 10px solid;
+    }
+
+    /* type colours */
+    .mt-chest  .marker-bubble { border-color: #f0b030; }
+    .mt-chest  .marker-tail  { border-top-color: #f0b030; }
+    .mt-boss   .marker-bubble { border-color: #d03020; }
+    .mt-boss   .marker-tail  { border-top-color: #d03020; }
+    .mt-npc    .marker-bubble { border-color: #30a0e0; }
+    .mt-npc    .marker-tail  { border-top-color: #30a0e0; }
+    .mt-quest  .marker-bubble { border-color: #60c040; }
+    .mt-quest  .marker-tail  { border-top-color: #60c040; }
+    .mt-portal .marker-bubble { border-color: #c060f0; }
+    .mt-portal .marker-tail  { border-top-color: #c060f0; }
+    .mt-note   .marker-bubble { border-color: #808080; }
+    .mt-note   .marker-tail  { border-top-color: #808080; }
+
+    /* ===== Tooltip / Context Popup ===== */
+    #ctx-popup {
+      position: fixed;
+      z-index: 500;
+      background: #1a1030f0;
+      border: 1.5px solid #6a50a0;
+      border-radius: 12px;
+      padding: 14px 16px;
+      min-width: 220px;
+      box-shadow: 0 8px 32px #000a;
+      display: none;
+    }
+    #ctx-popup.visible { display: block; }
+    #ctx-popup h3 { font-size: 13px; color: #f0d060; margin-bottom: 10px; }
+    #ctx-popup label { display: block; font-size: 11px; color: #a888d8; margin-bottom: 3px; }
+    #ctx-popup input, #ctx-popup textarea {
+      width: 100%;
+      background: #110d22;
+      border: 1px solid #4a3870;
+      border-radius: 6px;
+      color: #e8d9a0;
+      padding: 6px 8px;
+      font-size: 12px;
+      margin-bottom: 8px;
+      resize: none;
+    }
+    #ctx-popup input:focus, #ctx-popup textarea:focus {
+      outline: none;
+      border-color: #8a60d0;
+    }
+    .ctx-btns { display: flex; gap: 6px; margin-top: 4px; }
+    .ctx-btn-ok {
+      flex: 1;
+      background: linear-gradient(135deg, #6a3090, #4a1870);
+      border: 1px solid #9a60d0;
+      color: #e8c8ff;
+      border-radius: 7px;
+      padding: 7px;
+      cursor: pointer;
+      font-size: 12px;
+      transition: all .2s;
+    }
+    .ctx-btn-ok:hover { background: linear-gradient(135deg, #8a40b0, #6a2090); }
+    .ctx-btn-cancel {
+      background: #1e1438;
+      border: 1px solid #4a3870;
+      color: #a888d8;
+      border-radius: 7px;
+      padding: 7px 10px;
+      cursor: pointer;
+      font-size: 12px;
+      transition: all .2s;
+    }
+    .ctx-btn-cancel:hover { background: #2e2448; }
+
+    /* ===== Info Tooltip ===== */
+    #info-tip {
+      position: fixed;
+      z-index: 400;
+      background: #1a1030f0;
+      border: 1.5px solid #6a50a0;
+      border-radius: 10px;
+      padding: 10px 14px;
+      max-width: 240px;
+      box-shadow: 0 4px 20px #000a;
+      pointer-events: none;
+      display: none;
+      font-size: 12px;
+    }
+    #info-tip.visible { display: block; }
+    #info-tip .tip-title { font-size: 13px; color: #f0d060; margin-bottom: 4px; }
+    #info-tip .tip-note { color: #c8b8e8; line-height: 1.5; }
+
+    /* ===== Minimap ===== */
+    #minimap-wrap {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 150;
+      background: #1a1030cc;
+      border: 2px solid #4a3870;
+      border-radius: 10px;
+      overflow: hidden;
+      cursor: pointer;
+    }
+    #minimap-canvas { display: block; width: 180px; height: 101px; }
+    #minimap-viewport {
+      position: absolute;
+      top: 0; left: 0;
+      border: 2px solid #f0b030;
+      pointer-events: none;
+      border-radius: 2px;
+    }
+
+    /* ===== Zoom controls ===== */
+    #zoom-controls {
+      position: fixed;
+      bottom: 140px;
+      right: 20px;
+      z-index: 150;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .zoom-btn {
+      width: 36px;
+      height: 36px;
+      background: #1a1030ee;
+      border: 1.5px solid #4a3870;
+      color: #c8a8f8;
+      border-radius: 8px;
+      font-size: 20px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all .2s;
+    }
+    .zoom-btn:hover { background: #2a1a50; border-color: #7a58c0; color: #fff; }
+    #zoom-label {
+      text-align: center;
+      font-size: 10px;
+      color: #7868a0;
+      padding: 2px 0;
+    }
+
+    /* ===== Coord display ===== */
+    #coord-display {
+      position: fixed;
+      bottom: 20px;
+      left: 300px;
+      z-index: 150;
+      background: #1a1030cc;
+      border: 1px solid #3a2860;
+      border-radius: 6px;
+      padding: 4px 10px;
+      font-size: 11px;
+      color: #7868a0;
+      pointer-events: none;
+    }
+
+    /* ===== Mode indicator ===== */
+    #mode-indicator {
+      position: fixed;
+      top: 64px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 300;
+      background: #2a1038ee;
+      border: 1.5px solid #9a3020;
+      border-radius: 20px;
+      padding: 6px 18px;
+      font-size: 13px;
+      color: #ffa080;
+      display: none;
+      pointer-events: none;
+    }
+    #mode-indicator.visible { display: block; }
+
+    /* ===== Import/Export modal ===== */
+    #io-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 600;
+      background: #00000099;
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+    #io-modal.visible { display: flex; }
+    #io-box {
+      background: #1a1030;
+      border: 2px solid #6a50a0;
+      border-radius: 14px;
+      padding: 22px 24px;
+      width: 500px;
+      max-width: 95vw;
+      box-shadow: 0 12px 40px #000c;
+    }
+    #io-box h2 { color: #f0d060; font-size: 16px; margin-bottom: 14px; }
+    #io-box textarea {
+      width: 100%;
+      height: 200px;
+      background: #110d22;
+      border: 1px solid #4a3870;
+      border-radius: 8px;
+      color: #e8d9a0;
+      padding: 10px;
+      font-size: 12px;
+      font-family: monospace;
+      resize: vertical;
+    }
+    .io-btns { display: flex; gap: 8px; margin-top: 10px; justify-content: flex-end; }
+  </style>
+</head>
+<body>
+
+<!-- ===== Top Bar ===== -->
+<div id="topbar">
+  <h1>⚔️ 일곱 개의 대죄: 오리진 — 리오네스 맵</h1>
+  <button class="tb-btn" id="btn-mode-add" onclick="setMode('add')">✚ 마커 추가</button>
+  <button class="tb-btn" id="btn-mode-del" onclick="setMode('delete')">🗑 삭제 모드</button>
+  <button class="tb-btn" onclick="clearAllMarkers()">🚫 전체 삭제</button>
+  <button class="tb-btn" onclick="openExport()">💾 내보내기</button>
+  <button class="tb-btn" onclick="openImport()">📂 불러오기</button>
+</div>
+
+<!-- ===== Mode indicator ===== -->
+<div id="mode-indicator" class="visible"></div>
+
+<!-- ===== Main ===== -->
+<div id="main">
+
+  <!-- Left Sidebar -->
+  <div id="sidebar">
+    <div id="sidebar-header">📍 마커 유형 선택</div>
+
+    <div id="marker-type-panel">
+      <div class="panel-title">마커 종류</div>
+      <div class="marker-types">
+        <!-- Chest (treasure) -->
+        <div class="mt-btn selected" data-type="chest" onclick="selectMarkerType('chest')" title="보물상자">
+          <div class="icon">
+            <svg class="chest-icon" viewBox="0 0 32 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <!-- chest body -->
+              <rect x="2" y="10" width="28" height="12" rx="2" fill="#8B5E2A" stroke="#f0b030" stroke-width="1.5"/>
+              <!-- chest lid -->
+              <path d="M2 12 Q2 4 16 4 Q30 4 30 12Z" fill="#A0722A" stroke="#f0b030" stroke-width="1.5"/>
+              <!-- lid highlight -->
+              <path d="M6 10 Q16 6 26 10" stroke="#f0d060" stroke-width="1" opacity="0.5"/>
+              <!-- lock plate -->
+              <rect x="12" y="13" width="8" height="6" rx="1" fill="#d4940a" stroke="#f0b030" stroke-width="1"/>
+              <!-- keyhole -->
+              <circle cx="16" cy="16" r="1.5" fill="#1a1030"/>
+              <rect x="15" y="17" width="2" height="2" fill="#1a1030"/>
+              <!-- bands -->
+              <line x1="2" y1="16" x2="11" y2="16" stroke="#f0b030" stroke-width="1"/>
+              <line x1="21" y1="16" x2="30" y2="16" stroke="#f0b030" stroke-width="1"/>
+              <!-- hinges top-left/right -->
+              <rect x="3" y="10" width="4" height="3" rx="1" fill="#d4940a" stroke="#f0b030" stroke-width="0.8"/>
+              <rect x="25" y="10" width="4" height="3" rx="1" fill="#d4940a" stroke="#f0b030" stroke-width="0.8"/>
+            </svg>
+          </div>
+          <div class="lbl">보물상자</div>
+        </div>
+
+        <!-- Boss -->
+        <div class="mt-btn" data-type="boss" onclick="selectMarkerType('boss')" title="보스">
+          <div class="icon">💀</div>
+          <div class="lbl">보스</div>
+        </div>
+
+        <!-- NPC -->
+        <div class="mt-btn" data-type="npc" onclick="selectMarkerType('npc')" title="NPC">
+          <div class="icon">👤</div>
+          <div class="lbl">NPC</div>
+        </div>
+
+        <!-- Quest -->
+        <div class="mt-btn" data-type="quest" onclick="selectMarkerType('quest')" title="퀘스트">
+          <div class="icon">❗</div>
+          <div class="lbl">퀘스트</div>
+        </div>
+
+        <!-- Portal -->
+        <div class="mt-btn" data-type="portal" onclick="selectMarkerType('portal')" title="포탈/워프">
+          <div class="icon">🌀</div>
+          <div class="lbl">포탈</div>
+        </div>
+
+        <!-- Note -->
+        <div class="mt-btn" data-type="note" onclick="selectMarkerType('note')" title="메모">
+          <div class="icon">📝</div>
+          <div class="lbl">메모</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Marker list -->
+    <div id="marker-list-wrap">
+      <div id="no-markers">마커가 없습니다.<br>맵을 클릭하여<br>마커를 추가하세요.</div>
+    </div>
+
+    <!-- Stats -->
+    <div id="sidebar-stats">
+      <div class="stat-badge">
+        <svg width="14" height="11" viewBox="0 0 32 24"><rect x="2" y="10" width="28" height="12" rx="2" fill="#8B5E2A" stroke="#f0b030" stroke-width="2"/><path d="M2 12 Q2 4 16 4 Q30 4 30 12Z" fill="#A0722A" stroke="#f0b030" stroke-width="2"/><rect x="12" y="13" width="8" height="6" rx="1" fill="#d4940a" stroke="#f0b030" stroke-width="1.5"/></svg>
+        <span id="stat-chest">0</span>
+      </div>
+      <div class="stat-badge">💀 <span id="stat-boss">0</span></div>
+      <div class="stat-badge">👤 <span id="stat-npc">0</span></div>
+      <div class="stat-badge">❗ <span id="stat-quest">0</span></div>
+      <div class="stat-badge">🌀 <span id="stat-portal">0</span></div>
+      <div class="stat-badge">📝 <span id="stat-note">0</span></div>
+    </div>
+  </div>
+
+  <!-- Map viewport -->
+  <div id="map-viewport">
+    <div id="map-container">
+      <img id="map-img" src="map.png" alt="리오네스 맵" draggable="false" />
+      <div id="marker-layer"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Coord display ===== -->
+<div id="coord-display">X: — Y: —</div>
+
+<!-- ===== Zoom controls ===== -->
+<div id="zoom-controls">
+  <button class="zoom-btn" onclick="zoomIn()">＋</button>
+  <div id="zoom-label">100%</div>
+  <button class="zoom-btn" onclick="zoomOut()">－</button>
+  <button class="zoom-btn" onclick="zoomReset()" title="초기화">⊙</button>
+</div>
+
+<!-- ===== Minimap ===== -->
+<div id="minimap-wrap" title="미니맵 (클릭하여 이동)">
+  <canvas id="minimap-canvas" width="180" height="101"></canvas>
+  <div id="minimap-viewport"></div>
+</div>
+
+<!-- ===== Context popup (add marker) ===== -->
+<div id="ctx-popup">
+  <h3 id="ctx-title">📍 마커 추가</h3>
+  <label>이름 (선택)</label>
+  <input type="text" id="ctx-name" placeholder="마커 이름..." maxlength="40" />
+  <label>메모 (선택)</label>
+  <textarea id="ctx-note" rows="3" placeholder="메모 내용..."></textarea>
+  <div class="ctx-btns">
+    <button class="ctx-btn-cancel" onclick="cancelAdd()">취소</button>
+    <button class="ctx-btn-ok" onclick="confirmAdd()">추가</button>
+  </div>
+</div>
+
+<!-- ===== Info tooltip ===== -->
+<div id="info-tip">
+  <div class="tip-title" id="tip-title"></div>
+  <div class="tip-note" id="tip-note"></div>
+</div>
+
+<!-- ===== Import/Export modal ===== -->
+<div id="io-modal">
+  <div id="io-box">
+    <h2 id="io-title">💾 마커 내보내기</h2>
+    <textarea id="io-text"></textarea>
+    <div class="io-btns">
+      <button class="ctx-btn-cancel" onclick="closeIO()">닫기</button>
+      <button class="ctx-btn-ok" id="io-action-btn">복사</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ================================================================
+   Seven Deadly Sins Origin — 리오네스 맵 마커 시스템
+   ================================================================ */
+
+// ── Constants ──────────────────────────────────────────────────
+const MAP_W = 3000, MAP_H = 3000;
+const ZOOM_MIN = 0.15, ZOOM_MAX = 3, ZOOM_STEP = 0.15;
+const STORAGE_KEY = 'sdso_lioness_markers';
+
+// ── State ──────────────────────────────────────────────────────
+let zoom = 0.30;
+let panX = 0, panY = 0;
+let isPanning = false, panStartX = 0, panStartY = 0, panOriginX = 0, panOriginY = 0;
+let mode = 'add'; // 'add' | 'delete'
+let selectedType = 'chest';
+let pendingX = 0, pendingY = 0;
+let markers = [];   // [{id, type, x, y, name, note, el}]
+let focusedId = null;
+let ioMode = 'export';
+
+// ── DOM refs ───────────────────────────────────────────────────
+const viewport = document.getElementById('map-viewport');
+const container = document.getElementById('map-container');
+const markerLayer = document.getElementById('marker-layer');
+const ctxPopup = document.getElementById('ctx-popup');
+const infoTip = document.getElementById('info-tip');
+const coordDisp = document.getElementById('coord-display');
+const zoomLabel = document.getElementById('zoom-label');
+const modeInd = document.getElementById('mode-indicator');
+const minimapCanvas = document.getElementById('minimap-canvas');
+const minimapVP = document.getElementById('minimap-viewport');
+const minimapCtx = minimapCanvas.getContext('2d');
+
+// ── Type config ────────────────────────────────────────────────
+const TYPE_CONFIG = {
+  chest:  { label: '보물상자', color: '#f0b030', emoji: null,  svgIcon: true  },
+  boss:   { label: '보스',    color: '#d03020', emoji: '💀', svgIcon: false },
+  npc:    { label: 'NPC',     color: '#30a0e0', emoji: '👤', svgIcon: false },
+  quest:  { label: '퀘스트',  color: '#60c040', emoji: '❗', svgIcon: false },
+  portal: { label: '포탈',    color: '#c060f0', emoji: '🌀', svgIcon: false },
+  note:   { label: '메모',    color: '#808080', emoji: '📝', svgIcon: false },
+};
+
+// ── SVG for chest marker ───────────────────────────────────────
+function chestSVGHtml(size=28) {
+  return `<svg width="${size}" height="${Math.round(size*0.75)}" viewBox="0 0 32 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect x="2" y="10" width="28" height="12" rx="2" fill="#8B5E2A" stroke="#f0b030" stroke-width="1.5"/>
+    <path d="M2 12 Q2 4 16 4 Q30 4 30 12Z" fill="#A0722A" stroke="#f0b030" stroke-width="1.5"/>
+    <path d="M6 10 Q16 6 26 10" stroke="#f0d060" stroke-width="1" opacity="0.5"/>
+    <rect x="12" y="13" width="8" height="6" rx="1" fill="#d4940a" stroke="#f0b030" stroke-width="1"/>
+    <circle cx="16" cy="16" r="1.5" fill="#1a1030"/>
+    <rect x="15" y="17" width="2" height="2" fill="#1a1030"/>
+    <line x1="2" y1="16" x2="11" y2="16" stroke="#f0b030" stroke-width="1"/>
+    <line x1="21" y1="16" x2="30" y2="16" stroke="#f0b030" stroke-width="1"/>
+    <rect x="3" y="10" width="4" height="3" rx="1" fill="#d4940a" stroke="#f0b030" stroke-width="0.8"/>
+    <rect x="25" y="10" width="4" height="3" rx="1" fill="#d4940a" stroke="#f0b030" stroke-width="0.8"/>
+  </svg>`;
+}
+
+// ── Zoom / Pan ─────────────────────────────────────────────────
+function applyTransform() {
+  container.style.transform = `translate(${panX}px, ${panY}px) scale(${zoom})`;
+  zoomLabel.textContent = Math.round(zoom * 100) + '%';
+  updateMinimap();
+}
+
+function clampPan() {
+  const vw = viewport.clientWidth, vh = viewport.clientHeight;
+  const mw = MAP_W * zoom, mh = MAP_H * zoom;
+  const minX = Math.min(0, vw - mw);
+  const minY = Math.min(0, vh - mh);
+  panX = Math.max(minX, Math.min(0, panX));
+  panY = Math.max(minY, Math.min(0, panY));
+}
+
+function zoomAt(cx, cy, newZoom) {
+  newZoom = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, newZoom));
+  const factor = newZoom / zoom;
+  panX = cx - factor * (cx - panX);
+  panY = cy - factor * (cy - panY);
+  zoom = newZoom;
+  clampPan();
+  applyTransform();
+}
+
+function zoomIn()    { zoomAt(viewport.clientWidth/2, viewport.clientHeight/2, zoom + ZOOM_STEP); }
+function zoomOut()   { zoomAt(viewport.clientWidth/2, viewport.clientHeight/2, zoom - ZOOM_STEP); }
+function zoomReset() {
+  zoom = 0.30;
+  const vw = viewport.clientWidth, vh = viewport.clientHeight;
+  panX = (vw - MAP_W * zoom) / 2;
+  panY = (vh - MAP_H * zoom) / 2;
+  clampPan();
+  applyTransform();
+}
+
+// ── Viewport → Map coord ───────────────────────────────────────
+function screenToMap(sx, sy) {
+  const rect = viewport.getBoundingClientRect();
+  return {
+    x: (sx - rect.left - panX) / zoom,
+    y: (sy - rect.top  - panY) / zoom,
+  };
+}
+
+// ── Mode ───────────────────────────────────────────────────────
+function setMode(m) {
+  mode = m;
+  document.getElementById('btn-mode-add').classList.toggle('active', m === 'add');
+  document.getElementById('btn-mode-del').classList.toggle('danger', m === 'delete');
+  viewport.className = m === 'delete' ? 'mode-delete' : (m === 'add' ? '' : 'mode-select');
+  if (m === 'delete') {
+    modeInd.textContent = '🗑 삭제 모드: 마커를 클릭하면 삭제됩니다';
+    modeInd.classList.add('visible');
+  } else {
+    modeInd.classList.remove('visible');
+  }
+  cancelAdd();
+}
+
+// ── Marker type select ─────────────────────────────────────────
+function selectMarkerType(t) {
+  selectedType = t;
+  document.querySelectorAll('.mt-btn').forEach(el => {
+    el.classList.toggle('selected', el.dataset.type === t);
+  });
+}
+
+// ── Add marker flow ────────────────────────────────────────────
+viewport.addEventListener('click', (e) => {
+  if (isPanning) return;
+  if (mode !== 'add') return;
+  if (e.target.closest('.map-marker')) return;
+
+  const {x, y} = screenToMap(e.clientX, e.clientY);
+  if (x < 0 || y < 0 || x > MAP_W || y > MAP_H) return;
+
+  pendingX = Math.round(x);
+  pendingY = Math.round(y);
+
+  const cfg = TYPE_CONFIG[selectedType];
+  document.getElementById('ctx-title').textContent = cfg.label + ' 마커 추가';
+  document.getElementById('ctx-name').value = '';
+  document.getElementById('ctx-note').value = '';
+  ctxPopup.style.left = Math.min(e.clientX + 12, window.innerWidth - 260) + 'px';
+  ctxPopup.style.top  = Math.min(e.clientY - 20, window.innerHeight - 200) + 'px';
+  ctxPopup.classList.add('visible');
+  setTimeout(() => document.getElementById('ctx-name').focus(), 50);
+});
+
+function cancelAdd() {
+  ctxPopup.classList.remove('visible');
+}
+
+function confirmAdd() {
+  const name = document.getElementById('ctx-name').value.trim();
+  const note = document.getElementById('ctx-note').value.trim();
+  addMarker({ type: selectedType, x: pendingX, y: pendingY, name, note });
+  ctxPopup.classList.remove('visible');
+}
+
+// keyboard confirm
+document.getElementById('ctx-name').addEventListener('keydown', e => {
+  if (e.key === 'Enter') { e.preventDefault(); confirmAdd(); }
+  if (e.key === 'Escape') cancelAdd();
+});
+
+// ── Marker data ────────────────────────────────────────────────
+function addMarker({type, x, y, name, note, id}) {
+  id = id || (Date.now() + '_' + Math.random().toString(36).slice(2));
+  const m = {id, type, x, y, name: name||'', note: note||''};
+  markers.push(m);
+  m.el = createMarkerEl(m);
+  markerLayer.appendChild(m.el);
+  refreshSidebar();
+  saveMarkers();
+  return m;
+}
+
+function removeMarker(id) {
+  const idx = markers.findIndex(m => m.id === id);
+  if (idx < 0) return;
+  const m = markers[idx];
+  if (m.el) m.el.remove();
+  markers.splice(idx, 1);
+  if (focusedId === id) focusedId = null;
+  refreshSidebar();
+  saveMarkers();
+}
+
+function clearAllMarkers() {
+  if (!confirm('모든 마커를 삭제하시겠습니까?')) return;
+  markers.forEach(m => m.el && m.el.remove());
+  markers = [];
+  focusedId = null;
+  refreshSidebar();
+  saveMarkers();
+}
+
+// ── Create marker DOM ──────────────────────────────────────────
+function createMarkerEl(m) {
+  const div = document.createElement('div');
+  div.className = `map-marker mt-${m.type}`;
+  div.dataset.id = m.id;
+  div.style.left = m.x + 'px';
+  div.style.top  = m.y + 'px';
+
+  const cfg = TYPE_CONFIG[m.type];
+  const iconHtml = m.type === 'chest'
+    ? chestSVGHtml(30)
+    : `<span class="marker-bubble-icon">${cfg.emoji}</span>`;
+
+  const labelHtml = m.name
+    ? `<span class="marker-bubble-label">${escHtml(m.name)}</span>`
+    : '';
+
+  div.innerHTML = `
+    <div class="marker-pin">
+      <div class="marker-bubble">
+        ${iconHtml}
+        ${labelHtml}
+      </div>
+      <div class="marker-tail"></div>
+    </div>`;
+
+  // click handler
+  div.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (mode === 'delete') {
+      removeMarker(m.id);
+      return;
+    }
+    // focus / show tooltip
+    focusMarker(m.id);
+    showInfoTip(m, e.clientX, e.clientY);
+  });
+
+  div.addEventListener('mouseover', (e) => {
+    if (mode === 'delete') return;
+    showInfoTip(m, e.clientX, e.clientY);
+  });
+  div.addEventListener('mouseleave', () => hideInfoTip());
+
+  return div;
+}
+
+// ── Focus marker ───────────────────────────────────────────────
+function focusMarker(id) {
+  if (focusedId) {
+    const prev = markers.find(m => m.id === focusedId);
+    if (prev && prev.el) prev.el.classList.remove('focused');
+    // sidebar item
+    const prevSI = document.querySelector(`.marker-item[data-id="${focusedId}"]`);
+    if (prevSI) prevSI.classList.remove('focused');
+  }
+  focusedId = id;
+  const m = markers.find(m => m.id === id);
+  if (m && m.el) m.el.classList.add('focused');
+  const si = document.querySelector(`.marker-item[data-id="${id}"]`);
+  if (si) { si.classList.add('focused'); si.scrollIntoView({block:'nearest'}); }
+}
+
+// ── Tooltip ────────────────────────────────────────────────────
+function showInfoTip(m, cx, cy) {
+  const cfg = TYPE_CONFIG[m.type];
+  document.getElementById('tip-title').textContent =
+    (m.type === 'chest' ? '🟡' : cfg.emoji) + ' ' + (m.name || cfg.label) + ` (${m.x}, ${m.y})`;
+  document.getElementById('tip-note').textContent = m.note || '';
+  infoTip.style.left = Math.min(cx + 14, window.innerWidth - 260) + 'px';
+  infoTip.style.top  = Math.min(cy + 14, window.innerHeight - 100) + 'px';
+  infoTip.classList.add('visible');
+}
+function hideInfoTip() { infoTip.classList.remove('visible'); }
+
+// ── Sidebar refresh ────────────────────────────────────────────
+function refreshSidebar() {
+  const wrap = document.getElementById('marker-list-wrap');
+  const noM = document.getElementById('no-markers');
+  if (markers.length === 0) {
+    wrap.innerHTML = '<div id="no-markers">마커가 없습니다.<br>맵을 클릭하여<br>마커를 추가하세요.</div>';
+    updateStats();
+    return;
+  }
+  // group by type
+  const groups = {};
+  markers.forEach(m => {
+    if (!groups[m.type]) groups[m.type] = [];
+    groups[m.type].push(m);
+  });
+  let html = '';
+  for (const [type, list] of Object.entries(groups)) {
+    const cfg = TYPE_CONFIG[type];
+    html += `<div class="marker-group-title">${cfg.label} (${list.length})</div>`;
+    list.forEach(m => {
+      const iconHtml = type === 'chest'
+        ? `<span class="mi-icon">${chestSVGHtml(18)}</span>`
+        : `<span class="mi-icon">${cfg.emoji}</span>`;
+      html += `<div class="marker-item" data-id="${m.id}" onclick="sidebarClickMarker('${m.id}')">
+        ${iconHtml}
+        <div class="mi-info">
+          <div class="mi-name">${escHtml(m.name || cfg.label)}</div>
+          <div class="mi-coord">X:${m.x} Y:${m.y}</div>
+        </div>
+        <button class="mi-del" onclick="event.stopPropagation();removeMarker('${m.id}')" title="삭제">✕</button>
+      </div>`;
+    });
+  }
+  wrap.innerHTML = html;
+  updateStats();
+}
+
+function sidebarClickMarker(id) {
+  const m = markers.find(m => m.id === id);
+  if (!m) return;
+  focusMarker(id);
+  // pan to marker
+  const vw = viewport.clientWidth, vh = viewport.clientHeight;
+  panX = vw/2 - m.x * zoom;
+  panY = vh/2 - m.y * zoom;
+  clampPan();
+  applyTransform();
+}
+
+// ── Stats ──────────────────────────────────────────────────────
+function updateStats() {
+  for (const t of Object.keys(TYPE_CONFIG)) {
+    const el = document.getElementById('stat-' + t);
+    if (el) el.textContent = markers.filter(m => m.type === t).length;
+  }
+}
+
+// ── Persist ────────────────────────────────────────────────────
+function saveMarkers() {
+  const data = markers.map(({id, type, x, y, name, note}) => ({id, type, x, y, name, note}));
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+}
+
+function loadMarkers() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return;
+    const data = JSON.parse(raw);
+    data.forEach(d => addMarker(d));
+  } catch(e) { console.warn('marker load failed', e); }
+}
+
+// ── Import / Export ────────────────────────────────────────────
+function openExport() {
+  ioMode = 'export';
+  document.getElementById('io-title').textContent = '💾 마커 내보내기 (JSON)';
+  const data = markers.map(({id, type, x, y, name, note}) => ({id, type, x, y, name, note}));
+  document.getElementById('io-text').value = JSON.stringify(data, null, 2);
+  document.getElementById('io-action-btn').textContent = '📋 복사';
+  document.getElementById('io-action-btn').onclick = () => {
+    navigator.clipboard.writeText(document.getElementById('io-text').value)
+      .then(() => alert('클립보드에 복사되었습니다!'))
+      .catch(() => {});
+  };
+  document.getElementById('io-modal').classList.add('visible');
+}
+
+function openImport() {
+  ioMode = 'import';
+  document.getElementById('io-title').textContent = '📂 마커 불러오기 (JSON 붙여넣기)';
+  document.getElementById('io-text').value = '';
+  document.getElementById('io-action-btn').textContent = '✔ 불러오기';
+  document.getElementById('io-action-btn').onclick = () => {
+    try {
+      const data = JSON.parse(document.getElementById('io-text').value);
+      if (!Array.isArray(data)) throw new Error('array expected');
+      markers.forEach(m => m.el && m.el.remove());
+      markers = [];
+      data.forEach(d => addMarker(d));
+      closeIO();
+      alert(`${data.length}개 마커를 불러왔습니다.`);
+    } catch(e) {
+      alert('JSON 파싱 오류: ' + e.message);
+    }
+  };
+  document.getElementById('io-modal').classList.add('visible');
+}
+
+function closeIO() { document.getElementById('io-modal').classList.remove('visible'); }
+
+// ── Mouse pan ──────────────────────────────────────────────────
+let panMoved = false;
+viewport.addEventListener('mousedown', (e) => {
+  if (e.button !== 1 && !(e.button === 0 && (e.ctrlKey || e.metaKey || e.altKey))) {
+    if (e.button === 0 && mode === 'add') return; // let click handle
+    if (e.button === 0 && mode === 'delete') return;
+  }
+  isPanning = true;
+  panMoved = false;
+  panStartX = e.clientX;
+  panStartY = e.clientY;
+  panOriginX = panX;
+  panOriginY = panY;
+  viewport.style.cursor = 'grabbing';
+  e.preventDefault();
+});
+
+// Middle mouse / right mouse always pan
+viewport.addEventListener('mousedown', (e) => {
+  if (e.button === 1) {
+    isPanning = true; panMoved = false;
+    panStartX = e.clientX; panStartY = e.clientY;
+    panOriginX = panX; panOriginY = panY;
+    viewport.style.cursor = 'grabbing';
+    e.preventDefault();
+  }
+});
+
+window.addEventListener('mousemove', (e) => {
+  // coord display
+  const {x, y} = screenToMap(e.clientX, e.clientY);
+  if (x >= 0 && y >= 0 && x <= MAP_W && y <= MAP_H)
+    coordDisp.textContent = `X: ${Math.round(x)}  Y: ${Math.round(y)}`;
+
+  if (!isPanning) return;
+  const dx = e.clientX - panStartX, dy = e.clientY - panStartY;
+  if (Math.abs(dx) > 3 || Math.abs(dy) > 3) panMoved = true;
+  panX = panOriginX + dx;
+  panY = panOriginY + dy;
+  clampPan();
+  applyTransform();
+});
+
+window.addEventListener('mouseup', (e) => {
+  if (isPanning) {
+    isPanning = false;
+    viewport.style.cursor = '';
+  }
+});
+
+// right-click drag
+viewport.addEventListener('contextmenu', (e) => e.preventDefault());
+viewport.addEventListener('mousedown', (e) => {
+  if (e.button === 2) {
+    isPanning = true; panMoved = false;
+    panStartX = e.clientX; panStartY = e.clientY;
+    panOriginX = panX; panOriginY = panY;
+    viewport.style.cursor = 'grabbing';
+  }
+});
+
+// ── Wheel zoom ─────────────────────────────────────────────────
+viewport.addEventListener('wheel', (e) => {
+  e.preventDefault();
+  const delta = e.deltaY < 0 ? ZOOM_STEP : -ZOOM_STEP;
+  zoomAt(e.clientX, e.clientY, zoom + delta);
+}, {passive: false});
+
+// ── Touch support ──────────────────────────────────────────────
+let touches = {};
+let pinchDist0 = null, pinchZoom0 = null, pinchMidX = 0, pinchMidY = 0;
+
+viewport.addEventListener('touchstart', (e) => {
+  e.preventDefault();
+  if (e.touches.length === 1) {
+    isPanning = true; panMoved = false;
+    panStartX = e.touches[0].clientX;
+    panStartY = e.touches[0].clientY;
+    panOriginX = panX; panOriginY = panY;
+  } else if (e.touches.length === 2) {
+    const t1 = e.touches[0], t2 = e.touches[1];
+    pinchDist0 = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+    pinchZoom0 = zoom;
+    pinchMidX = (t1.clientX + t2.clientX) / 2;
+    pinchMidY = (t1.clientY + t2.clientY) / 2;
+    isPanning = false;
+  }
+}, {passive: false});
+
+viewport.addEventListener('touchmove', (e) => {
+  e.preventDefault();
+  if (e.touches.length === 1 && isPanning) {
+    const dx = e.touches[0].clientX - panStartX;
+    const dy = e.touches[0].clientY - panStartY;
+    if (Math.abs(dx)>3||Math.abs(dy)>3) panMoved = true;
+    panX = panOriginX + dx; panY = panOriginY + dy;
+    clampPan(); applyTransform();
+  } else if (e.touches.length === 2 && pinchDist0 !== null) {
+    const t1 = e.touches[0], t2 = e.touches[1];
+    const dist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+    zoomAt(pinchMidX, pinchMidY, pinchZoom0 * dist / pinchDist0);
+  }
+}, {passive: false});
+
+viewport.addEventListener('touchend', (e) => {
+  if (e.touches.length < 2) pinchDist0 = null;
+  if (e.touches.length === 0) {
+    if (!panMoved && isPanning) {
+      // treat as click
+      const touch = e.changedTouches[0];
+      if (mode === 'add') {
+        const {x, y} = screenToMap(touch.clientX, touch.clientY);
+        pendingX = Math.round(x); pendingY = Math.round(y);
+        const cfg = TYPE_CONFIG[selectedType];
+        document.getElementById('ctx-title').textContent = cfg.label + ' 마커 추가';
+        document.getElementById('ctx-name').value = '';
+        document.getElementById('ctx-note').value = '';
+        ctxPopup.style.left = Math.min(touch.clientX + 12, window.innerWidth - 260) + 'px';
+        ctxPopup.style.top  = Math.min(touch.clientY - 20, window.innerHeight - 200) + 'px';
+        ctxPopup.classList.add('visible');
+      }
+    }
+    isPanning = false;
+  }
+});
+
+// ── Minimap ────────────────────────────────────────────────────
+const minimapImg = new Image();
+minimapImg.src = 'map.png';
+minimapImg.onload = () => updateMinimap();
+
+function updateMinimap() {
+  const mw = minimapCanvas.width, mh = minimapCanvas.height;
+  minimapCtx.clearRect(0, 0, mw, mh);
+  minimapCtx.drawImage(minimapImg, 0, 0, mw, mh);
+
+  // draw markers on minimap
+  markers.forEach(m => {
+    const cfg = TYPE_CONFIG[m.type];
+    const mx = m.x / MAP_W * mw;
+    const my = m.y / MAP_H * mh;
+    minimapCtx.beginPath();
+    minimapCtx.arc(mx, my, 3, 0, Math.PI*2);
+    minimapCtx.fillStyle = cfg.color;
+    minimapCtx.fill();
+    minimapCtx.strokeStyle = '#000';
+    minimapCtx.lineWidth = 0.8;
+    minimapCtx.stroke();
+  });
+
+  // draw viewport rect
+  const vw = viewport.clientWidth, vh = viewport.clientHeight;
+  const rx = (-panX) / MAP_W * mw / zoom * (MAP_W / (MAP_W * zoom) * zoom);
+  const ry = (-panY) / MAP_H * mh / zoom * (MAP_H / (MAP_H * zoom) * zoom);
+  const rw = vw / zoom / MAP_W * mw;
+  const rh = vh / zoom / MAP_H * mh;
+  // clamp
+  const vpX = Math.max(0, -panX / zoom / MAP_W * mw);
+  const vpY = Math.max(0, -panY / zoom / MAP_H * mh);
+  const vpW = Math.min(mw - vpX, vw / zoom / MAP_W * mw);
+  const vpH = Math.min(mh - vpY, vh / zoom / MAP_H * mh);
+
+  minimapVP.style.left   = (vpX * minimapCanvas.offsetWidth / mw) + 'px';
+  minimapVP.style.top    = (vpY * minimapCanvas.offsetHeight / mh) + 'px';
+  minimapVP.style.width  = (vpW * minimapCanvas.offsetWidth / mw) + 'px';
+  minimapVP.style.height = (vpH * minimapCanvas.offsetHeight / mh) + 'px';
+}
+
+document.getElementById('minimap-wrap').addEventListener('click', (e) => {
+  const rect = minimapCanvas.getBoundingClientRect();
+  const rx = (e.clientX - rect.left) / rect.width;
+  const ry = (e.clientY - rect.top) / rect.height;
+  const mapX = rx * MAP_W, mapY = ry * MAP_H;
+  const vw = viewport.clientWidth, vh = viewport.clientHeight;
+  panX = vw/2 - mapX * zoom;
+  panY = vh/2 - mapY * zoom;
+  clampPan();
+  applyTransform();
+});
+
+// ── Utility ────────────────────────────────────────────────────
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── Keyboard shortcuts ─────────────────────────────────────────
+document.addEventListener('keydown', (e) => {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+  if (e.key === 'Escape') { cancelAdd(); setMode('add'); }
+  if (e.key === 'Delete' || e.key === 'd') { setMode(mode === 'delete' ? 'add' : 'delete'); }
+  if (e.key === '+' || e.key === '=') zoomIn();
+  if (e.key === '-') zoomOut();
+  if (e.key === '0') zoomReset();
+});
+
+// ── Init ───────────────────────────────────────────────────────
+window.addEventListener('load', () => {
+  zoomReset();
+  loadMarkers();
+  setMode('add');
+  updateMinimap();
+});
+
+window.addEventListener('resize', () => { clampPan(); applyTransform(); });
+</script>
+</body>
+</html>
