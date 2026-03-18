@@ -5,12 +5,12 @@
     "mapFile": "map_lioness.png",
     "markers": [
       {
-        "id": "1773847950959_cuu2oqj8ie",
+        "id": "test_marker_001",
         "type": "chest",
-        "x": 1611,
-        "y": 1450,
+        "x": 1612,
+        "y": 1451,
         "name": "빨래 건조대",
-        "note": "빨래건조대",
+        "note": "제보된 위치",
         "images": []
       }
     ]
