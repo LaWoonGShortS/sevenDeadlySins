@@ -751,7 +751,6 @@ body{
 // ── 상수 ──────────────────────────────────────────────────────
 const MAP_W=3000,MAP_H=3000;
 const ZOOM_MIN=0.12,ZOOM_MAX=3,ZOOM_STEP=0.14;
-const STORE_KEY='sdso_map_v2';
 
 // ── 타입 설정 ─────────────────────────────────────────────────
 const TYPES={
@@ -881,14 +880,14 @@ function confirmRegion(){
     closeRegionModal();
     renderTabs();
     if(curRegionId===rmEditMode && file){mapImg.src=file}
-    save();
+    save_editRegion(r); // 서버 저장
   } else {
     if(!file){alert('지도 파일명을 입력해주세요.');return}
     const id='region_'+Date.now();
-    regions.push({id,name,mapFile:file,markers:[]});
+    const newR={id,name,mapFile:file,markers:[]};
+    regions.push(newR);
     closeRegionModal();
-    switchRegion(id);
-    save();
+    save_addRegion(newR).then(()=>switchRegion(id)); // 서버 저장
   }
 }
 
@@ -1009,9 +1008,9 @@ function confirmAdd(){
     const m=curMarkers().find(m=>m.id===editingId);
     if(m){
       m.name=name;m.note=note;m.images=images;
-      // rebuild DOM
       if(m.el){m.el.remove();m.el=createMarkerEl(m);mkLayer.appendChild(m.el)}
-      refreshSidebar();save();
+      refreshSidebar();
+      save_editMarker(curRegionId, m); // 서버 저장
     }
     cancelAdd();closeDetail();
   } else {
@@ -1027,7 +1026,8 @@ function addMarker({type,x,y,name,note,images,id}){
   curMarkers().push(m);
   m.el=createMarkerEl(m);
   mkLayer.appendChild(m.el);
-  refreshSidebar();renderTabs();save();
+  refreshSidebar();renderTabs();
+  save_addMarker(curRegionId, m); // 서버 저장
   return m;
 }
 function removeMarker(id){
@@ -1038,14 +1038,18 @@ function removeMarker(id){
   if(m.el)m.el.remove();
   r.markers.splice(idx,1);
   if(focusedId===id)focusedId=null;
-  refreshSidebar();renderTabs();save();
+  refreshSidebar();renderTabs();
+  save_deleteMarker(curRegionId, id); // 서버 삭제
 }
 function clearRegionMarkers(){
   if(!confirm('현재 지역의 모든 마커를 삭제하시겠습니까?'))return;
   const r=curRegion();if(!r)return;
   r.markers.forEach(m=>m.el&&m.el.remove());
   r.markers=[];focusedId=null;
-  closeDetail();refreshSidebar();renderTabs();save();
+  closeDetail();refreshSidebar();renderTabs();
+  apiFetch('DELETE',`/api/regions/${curRegionId}/markers`)
+    .then(()=>showToast('🗑 전체 삭제됨','#f0b020'))
+    .catch(e=>showToast('❌ 오류: '+e.message,'#e05050'));
 }
 function editMarker(id){
   const m=curMarkers().find(m=>m.id===id);
@@ -1136,7 +1140,8 @@ function createMarkerEl(m){
       if(currentDetailId===m.id){
         document.getElementById('dp-coord').textContent=`X: ${m.x},  Y: ${m.y}`;
       }
-      updateMM();save();
+      updateMM();
+      save_editMarker(curRegionId, m); // 서버 저장
     }
   });
 
@@ -1437,23 +1442,129 @@ document.getElementById('mm-wrap').addEventListener('click',(e)=>{
 });
 
 // ── Save / Load ───────────────────────────────────────────────
-function save(){
-  const data=regions.map(r=>({
-    id:r.id,name:r.name,mapFile:r.mapFile,
-    markers:r.markers.map(({id,type,x,y,name,note,images})=>({id,type,x,y,name,note,images:images||[]}))
-  }));
-  try{localStorage.setItem(STORE_KEY,JSON.stringify(data))}catch(e){
-    console.warn('저장 실패 (용량 초과 가능성):', e);
+// ── API 통신 헬퍼 ─────────────────────────────────────────────
+const API = window.location.origin; // 같은 서버
+
+async function apiFetch(method, path, body){
+  const opts = { method, headers:{'Content-Type':'application/json'} };
+  if(body !== undefined) opts.body = JSON.stringify(body);
+  const res = await fetch(API + path, opts);
+  if(!res.ok){
+    const err = await res.json().catch(()=>({error:res.statusText}));
+    throw new Error(err.error || res.statusText);
+  }
+  return res.json();
+}
+
+// ── 저장 토스트 ───────────────────────────────────────────────
+let toastTimer=null;
+function showToast(msg, color='#60c060'){
+  let t=document.getElementById('save-toast');
+  if(!t){
+    t=document.createElement('div');t.id='save-toast';
+    Object.assign(t.style,{
+      position:'fixed',bottom:'130px',left:'286px',
+      zIndex:'600',background:'#1a1030ee',
+      border:'1.5px solid',borderRadius:'8px',
+      padding:'6px 14px',fontSize:'12px',
+      pointerEvents:'none',transition:'opacity .3s',
+      fontFamily:'inherit'
+    });
+    document.body.appendChild(t);
+  }
+  t.textContent=msg;t.style.borderColor=color;t.style.color=color;
+  t.style.opacity='1';
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>{t.style.opacity='0'},2000);
+}
+
+// ── 서버에 마커 추가 ──────────────────────────────────────────
+async function save_addMarker(regionId, m){
+  try{
+    await apiFetch('POST',`/api/regions/${regionId}/markers`,
+      {id:m.id,type:m.type,x:m.x,y:m.y,name:m.name,note:m.note,images:m.images||[]});
+    showToast('✅ 저장 완료');
+  }catch(e){ showToast('❌ 저장 실패: '+e.message,'#e05050'); }
+}
+
+// ── 서버에 마커 수정 ──────────────────────────────────────────
+async function save_editMarker(regionId, m){
+  try{
+    await apiFetch('PUT',`/api/regions/${regionId}/markers/${m.id}`,
+      {x:m.x,y:m.y,name:m.name,note:m.note,images:m.images||[]});
+    showToast('✅ 저장 완료');
+  }catch(e){ showToast('❌ 저장 실패: '+e.message,'#e05050'); }
+}
+
+// ── 서버에서 마커 삭제 ────────────────────────────────────────
+async function save_deleteMarker(regionId, markerId){
+  try{
+    await apiFetch('DELETE',`/api/regions/${regionId}/markers/${markerId}`);
+    showToast('🗑 삭제됨','#f0b020');
+  }catch(e){ showToast('❌ 삭제 실패: '+e.message,'#e05050'); }
+}
+
+// ── 서버에 지역 추가 ──────────────────────────────────────────
+async function save_addRegion(r){
+  try{
+    await apiFetch('POST','/api/regions',{id:r.id,name:r.name,mapFile:r.mapFile});
+  }catch(e){ showToast('❌ 지역 저장 실패: '+e.message,'#e05050'); }
+}
+
+// ── 서버에 지역 수정 ──────────────────────────────────────────
+async function save_editRegion(r){
+  try{
+    await apiFetch('PUT',`/api/regions/${r.id}`,{name:r.name,mapFile:r.mapFile});
+  }catch(e){ showToast('❌ 지역 수정 실패: '+e.message,'#e05050'); }
+}
+
+// ── 서버에서 전체 로드 ────────────────────────────────────────
+async function loadFromServer(){
+  try{
+    const data = await apiFetch('GET','/api/data');
+    regions = data.map(r=>({...r, markers:r.markers||[]}));
+    return true;
+  }catch(e){
+    console.warn('서버 로드 실패, 기본값 사용:', e);
+    return false;
   }
 }
-function load(){
-  try{
-    const raw=localStorage.getItem(STORE_KEY);
-    if(!raw)return false;
-    const data=JSON.parse(raw);
-    regions=data.map(r=>({...r,markers:r.markers||[]}));
-    return true;
-  }catch(e){return false}
+
+// ── 실시간 동기화 (15초 폴링) ─────────────────────────────────
+let syncInterval = null;
+function startSync(){
+  if(syncInterval) clearInterval(syncInterval);
+  syncInterval = setInterval(async ()=>{
+    try{
+      const data = await apiFetch('GET','/api/data');
+      // 변경 감지: 마커 수 또는 ID 변화
+      let changed = false;
+      data.forEach(serverR=>{
+        const localR = regions.find(r=>r.id===serverR.id);
+        if(!localR){ changed=true; return; }
+        if(serverR.markers.length !== localR.markers.length){ changed=true; return; }
+        // 마커 id 집합 비교
+        const sIds = new Set(serverR.markers.map(m=>m.id+':'+m.x+':'+m.y));
+        const lIds = new Set(localR.markers.map(m=>m.id+':'+m.x+':'+m.y));
+        if([...sIds].some(id=>!lIds.has(id))) changed=true;
+      });
+      if(regions.length !== data.length) changed=true;
+
+      if(changed){
+        // 서버 데이터로 갱신
+        const prevId = curRegionId;
+        regions = data.map(r=>({...r,markers:r.markers||[]}));
+        curRegionId = prevId && regions.find(r=>r.id===prevId) ? prevId : (regions[0]?.id||null);
+        mkLayer.innerHTML='';
+        const r=curRegion();
+        if(r){
+          r.markers.forEach(m=>{m.el=createMarkerEl(m);mkLayer.appendChild(m.el)});
+        }
+        renderTabs();refreshSidebar();updateMM();
+        showToast('🔄 다른 사용자가 업데이트했습니다','#a0a0f8');
+      }
+    }catch(e){}
+  }, 15000);
 }
 
 // ── Export / Import ───────────────────────────────────────────
@@ -1476,18 +1587,18 @@ function openImport(){
   document.getElementById('io-title').textContent='📂 데이터 불러오기 (JSON 붙여넣기)';
   document.getElementById('io-text').value='';
   document.getElementById('io-act').textContent='✔ 불러오기';
-  document.getElementById('io-act').onclick=()=>{
+  document.getElementById('io-act').onclick=async ()=>{
     try{
       const data=JSON.parse(document.getElementById('io-text').value);
       if(!Array.isArray(data))throw new Error('배열 형식 필요');
+      await apiFetch('PUT','/api/data',data);
       mkLayer.innerHTML='';
       regions=data.map(r=>({...r,markers:r.markers||[]}));
       curRegionId=regions[0]?.id||null;
       closeIO();
       renderTabs();
       if(curRegionId)switchRegion(curRegionId);
-      save();
-      alert(`${regions.length}개 지역, ${regions.reduce((a,r)=>a+r.markers.length,0)}개 마커를 불러왔습니다.`);
+      showToast(`✅ ${data.length}개 지역 불러오기 완료`);
     }catch(e){alert('오류: '+e.message)}
   };
   document.getElementById('io-modal').classList.add('vis');
@@ -1520,10 +1631,15 @@ function esc(s){
 }
 
 // ── Init ─────────────────────────────────────────────────────
-window.addEventListener('load',()=>{
-  const loaded=load();
-  if(!loaded)initDefaultRegion();
-  else if(!curRegionId&&regions.length>0)curRegionId=regions[0].id;
+window.addEventListener('load', async ()=>{
+  // 서버에서 데이터 로드
+  const loaded = await loadFromServer();
+  if(!loaded || regions.length===0){
+    regions=[{id:'region_lioness',name:'1. 페네스 호반 (리오네스)',mapFile:'map_lioness.png',markers:[]}];
+  }
+  if(!curRegionId || !regions.find(r=>r.id===curRegionId)){
+    curRegionId = regions[0].id;
+  }
 
   const r=curRegion();
   if(r){
@@ -1536,6 +1652,7 @@ window.addEventListener('load',()=>{
   refreshSidebar();
   zoomReset();
   setMode('add');
+  startSync(); // 15초마다 서버와 동기화
 });
 window.addEventListener('resize',()=>{clampPan();applyTrans()});
 </script>
