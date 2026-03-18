@@ -1,0 +1,1432 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>일곱 개의 대죄: 오리진 — 지도</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{
+  font-family:'Malgun Gothic','Apple SD Gothic Neo','Noto Sans KR','Segoe UI',sans-serif;
+  background:#08061a;color:#e8d9a0;
+  overflow:hidden;height:100vh;width:100vw;
+  display:flex;flex-direction:column;
+}
+
+/* ══ TOP BAR ══ */
+#topbar{
+  flex-shrink:0;height:52px;
+  background:linear-gradient(180deg,#1c1238,#110d22);
+  border-bottom:2px solid #3e2d6e;
+  display:flex;align-items:center;
+  padding:0 14px;gap:8px;z-index:300;
+  box-shadow:0 3px 14px #0009;
+}
+#topbar-title{font-size:15px;font-weight:700;color:#f0dc78;letter-spacing:.5px;text-shadow:0 0 10px #f0a02066;white-space:nowrap;}
+.tb-sep{width:1px;height:28px;background:#3e2d6e;flex-shrink:0}
+.tb-btn{
+  background:linear-gradient(135deg,#2e1f54,#1c1438);
+  border:1.5px solid #5a4090;color:#caaef8;
+  border-radius:7px;padding:5px 12px;font-size:12px;
+  cursor:pointer;transition:all .18s;white-space:nowrap;font-family:inherit;
+}
+.tb-btn:hover{background:linear-gradient(135deg,#4a2e80,#2e1a5a);border-color:#8860c8;color:#fff}
+.tb-btn.active{background:linear-gradient(135deg,#6a2818,#3e1008);border-color:#c04020;color:#ffb898}
+.tb-btn.danger{background:linear-gradient(135deg,#5e1218,#3a0808);border-color:#b02020;color:#ff9898}
+.tb-btn.report-btn{background:linear-gradient(135deg,#1a3a20,#0e2210);border-color:#3a8040;color:#80d890;}
+.tb-btn.report-btn:hover{background:linear-gradient(135deg,#2a5a30,#183218);border-color:#60c060;color:#a0f0a0}
+.tb-spacer{flex:1}
+/* 관리자 모드 배지 */
+#admin-badge{
+  background:linear-gradient(135deg,#503010,#301808);
+  border:1.5px solid #c07020;color:#f0c050;
+  border-radius:7px;padding:4px 10px;font-size:11px;
+  display:none;align-items:center;gap:5px;
+}
+#admin-badge.vis{display:flex}
+
+/* ══ REGION TAB BAR ══ */
+#region-bar{
+  flex-shrink:0;background:#0e0b1e;border-bottom:1.5px solid #2e1f50;
+  display:flex;align-items:center;padding:0 10px;gap:4px;
+  height:38px;overflow-x:auto;overflow-y:hidden;
+  scrollbar-width:thin;scrollbar-color:#3e2d6e transparent;
+}
+#region-bar::-webkit-scrollbar{height:4px}
+#region-bar::-webkit-scrollbar-thumb{background:#3e2d6e;border-radius:2px}
+.region-tab{
+  display:flex;align-items:center;gap:6px;padding:4px 14px;
+  border-radius:6px 6px 0 0;border:1.5px solid transparent;
+  border-bottom:none;cursor:pointer;font-size:12px;color:#786898;
+  transition:all .18s;white-space:nowrap;background:transparent;font-family:inherit;
+}
+.region-tab:hover{color:#b898e8;background:#1a1230}
+.region-tab.active{background:linear-gradient(180deg,#1e1440,#160e30);border-color:#5a4090;border-bottom-color:#0e0b1e;color:#f0dc78;font-weight:600;}
+.region-tab .tab-num{background:#2e1f54;border:1px solid #4a3278;color:#a888d8;border-radius:10px;padding:1px 6px;font-size:10px;}
+.region-tab.active .tab-num{background:#3e2864;color:#d4b8f8}
+.tab-add-btn{background:transparent;border:1px dashed #3e2d6e;color:#5a4090;border-radius:5px;padding:3px 9px;font-size:14px;cursor:pointer;margin:5px 4px;flex-shrink:0;transition:all .15s;}
+.tab-add-btn:hover{border-color:#7848c8;color:#9868e8;background:#1a1030;}
+/* 제보 대기 뱃지 */
+.region-tab .tab-pending{background:#5a2010;border:1px solid #c04020;color:#f08060;border-radius:10px;padding:1px 6px;font-size:10px;display:none;}
+.region-tab .tab-pending.vis{display:inline}
+
+/* ══ MAIN ══ */
+#main{flex:1;display:flex;overflow:hidden;position:relative}
+
+/* ══ LEFT SIDEBAR ══ */
+#sidebar{
+  width:270px;flex-shrink:0;
+  background:linear-gradient(180deg,#130e28f5,#0e0b1ef5);
+  border-right:2px solid #2e1f50;
+  display:flex;flex-direction:column;overflow:hidden;z-index:100;
+}
+.sb-section{padding:10px 12px 8px;border-bottom:1px solid #2e1f50;}
+.sb-title{font-size:10px;color:#5e4e88;text-transform:uppercase;letter-spacing:1.2px;margin-bottom:8px;font-weight:600;}
+.mt-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}
+.mt-btn{
+  display:flex;flex-direction:column;align-items:center;gap:3px;
+  padding:7px 4px;border-radius:7px;border:1.5px solid #2e1f50;
+  background:#120d24;cursor:pointer;transition:all .18s;
+  font-size:9.5px;color:#8878b0;font-family:inherit;
+}
+.mt-btn:hover{border-color:#6040a0;background:#1c1438}
+.mt-btn.selected{border-color:#f0b020;background:#1c1230;color:#f0d050;font-weight:600}
+.mt-btn .ico{font-size:20px;line-height:1}
+
+/* 제보 섹션 */
+.pending-section{padding:8px 12px;border-bottom:1px solid #2e1f50;display:none;}
+.pending-section.vis{display:block}
+.pending-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;}
+.pending-count{font-size:10px;color:#f08060;font-weight:600;}
+.pending-item{
+  background:#1a0e18;border:1px solid #5a2010;border-radius:7px;
+  padding:7px 9px;margin-bottom:5px;
+}
+.pending-item .pi-top{display:flex;align-items:center;gap:6px;margin-bottom:4px;}
+.pending-item .pi-type{font-size:14px;}
+.pending-item .pi-name{font-size:11px;color:#e8c8a0;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.pending-item .pi-coord{font-size:9.5px;color:#a06850;font-family:monospace;}
+.pending-item .pi-note{font-size:10px;color:#907060;margin-bottom:5px;line-height:1.4;word-break:break-all;}
+.pending-item .pi-btns{display:flex;gap:5px;}
+.pi-btn-ok{
+  flex:1;background:linear-gradient(135deg,#1a4a20,#0e2e10);
+  border:1px solid #3a8030;color:#70d070;
+  border-radius:5px;padding:4px;font-size:10px;
+  cursor:pointer;transition:all .18s;font-family:inherit;
+}
+.pi-btn-ok:hover{background:linear-gradient(135deg,#2a6a30,#183e18);color:#90f090}
+.pi-btn-no{
+  background:linear-gradient(135deg,#4a1010,#2e0808);
+  border:1px solid #8a2020;color:#e07070;
+  border-radius:5px;padding:4px 8px;font-size:10px;
+  cursor:pointer;transition:all .18s;font-family:inherit;
+}
+.pi-btn-no:hover{background:linear-gradient(135deg,#6a1818,#3e1010)}
+
+#sb-list-wrap{flex:1;overflow-y:auto;scrollbar-width:thin;scrollbar-color:#3e2d6e transparent;}
+#sb-list-wrap::-webkit-scrollbar{width:4px}
+#sb-list-wrap::-webkit-scrollbar-thumb{background:#3e2d6e;border-radius:2px}
+.sb-group-title{padding:8px 12px 3px;font-size:10px;color:#5e4e88;text-transform:uppercase;letter-spacing:1px;}
+.sb-item{
+  display:flex;align-items:center;gap:7px;padding:5px 10px;
+  margin:1px 5px;border-radius:6px;cursor:pointer;transition:background .14s;
+}
+.sb-item:hover{background:#1c1438}
+.sb-item.focused{background:#28185a}
+.sb-item .si-ico{font-size:16px;flex-shrink:0}
+.sb-item .si-info{flex:1;min-width:0}
+.sb-item .si-name{font-size:11px;color:#c8a8f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.sb-item .si-coord{font-size:9.5px;color:#5e4e80;font-family:monospace;}
+.sb-item .si-img-badge{font-size:9px;background:#1e3a20;border:1px solid #2e6a30;color:#60c060;border-radius:4px;padding:1px 5px;flex-shrink:0;}
+.sb-item .si-del{opacity:0;background:none;border:none;color:#c03030;cursor:pointer;font-size:14px;padding:2px 4px;border-radius:4px;transition:opacity .14s,background .14s;font-family:inherit;}
+.sb-item:hover .si-del{opacity:1}
+.sb-item .si-del:hover{background:#3a1010}
+#sb-empty{text-align:center;color:#3e2e68;font-size:12px;padding:24px 12px;line-height:1.8;}
+#sb-stats{padding:8px 12px;border-top:1px solid #2e1f50;display:flex;flex-wrap:wrap;gap:5px;}
+.stat-b{background:#120d24;border:1px solid #2e1f50;border-radius:5px;padding:3px 7px;font-size:10px;color:#8878b0;display:flex;align-items:center;gap:3px;}
+
+/* ══ MAP ══ */
+#map-vp{
+  flex:1;overflow:hidden;position:relative;
+  cursor:crosshair;
+  background:radial-gradient(ellipse at 50% 50%,#14103a,#080618);
+}
+#map-vp.mode-del{cursor:not-allowed}
+#map-vp.mode-move .map-marker{cursor:grab}
+#map-vp.mode-move .map-marker:active{cursor:grabbing}
+#map-vp.mode-report{cursor:crosshair}
+#map-cont{position:absolute;top:0;left:0;width:3000px;height:3000px;transform-origin:0 0;}
+#map-img{width:3000px;height:3000px;display:block;pointer-events:none;user-select:none;image-rendering:-webkit-optimize-contrast;image-rendering:crisp-edges;}
+#mk-layer{position:absolute;top:0;left:0;width:3000px;height:3000px;pointer-events:none;}
+
+/* ══ MARKERS ══ */
+.map-marker{
+  position:absolute;transform:translate(-50%,-100%);
+  cursor:pointer;pointer-events:all;z-index:10;
+  filter:drop-shadow(0 2px 6px #000c);transition:filter .15s;
+}
+.map-marker:hover{z-index:50;filter:drop-shadow(0 0 10px #fff5) drop-shadow(0 2px 6px #000c)}
+.map-marker.focused{z-index:60;filter:drop-shadow(0 0 12px #f0b03099) drop-shadow(0 2px 8px #000e)}
+/* 임시 제보 마커 */
+.map-marker.pending-marker{
+  filter:drop-shadow(0 0 8px #f0602088) drop-shadow(0 2px 6px #000c);
+  animation:pendingPulse 2s ease-in-out infinite;
+}
+@keyframes pendingPulse{
+  0%,100%{filter:drop-shadow(0 0 6px #f0602066) drop-shadow(0 2px 6px #000c)}
+  50%{filter:drop-shadow(0 0 14px #f06020cc) drop-shadow(0 2px 8px #000e)}
+}
+.mk-pin{display:flex;flex-direction:column;align-items:center}
+.mk-bubble{
+  background:#130e26ee;border:2px solid;border-radius:9px;
+  padding:5px 7px;display:flex;flex-direction:column;
+  align-items:center;gap:2px;min-width:40px;position:relative;
+}
+.mk-bubble .img-dot{
+  position:absolute;top:-5px;right:-5px;
+  width:12px;height:12px;border-radius:50%;
+  background:#2ecc40;border:1.5px solid #0e0b1e;
+}
+/* 제보 마커 말풍선 */
+.mk-bubble.pending-bubble{background:#2a1008ee;border-color:#f06020 !important;}
+.mk-bubble .pending-tag{
+  font-size:8px;background:#f06020;color:#fff;
+  border-radius:3px;padding:1px 4px;margin-bottom:1px;
+}
+.mk-ico{font-size:22px;line-height:1}
+.mk-lbl{font-size:9.5px;color:#e8d9a0;text-align:center;max-width:78px;word-break:break-all;line-height:1.2}
+.mk-coord{
+  font-size:8.5px;color:#a888d8;text-align:center;
+  background:#0e0a1e99;border-radius:4px;padding:1px 5px;
+  margin-top:1px;letter-spacing:.3px;white-space:nowrap;
+  border:1px solid #3e2d5888;
+}
+.mk-tail{width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-top:9px solid}
+
+/* type colors */
+.mt-chest .mk-bubble{border-color:#f0b020}.mt-chest .mk-tail{border-top-color:#f0b020}
+.mt-boss  .mk-bubble{border-color:#d02818}.mt-boss  .mk-tail{border-top-color:#d02818}
+.mt-npc   .mk-bubble{border-color:#28a0e0}.mt-npc   .mk-tail{border-top-color:#28a0e0}
+.mt-quest .mk-bubble{border-color:#58c038}.mt-quest .mk-tail{border-top-color:#58c038}
+.mt-portal.mk-bubble{border-color:#b858e8}.mt-portal.mk-tail{border-top-color:#b858e8}
+.mt-note  .mk-bubble{border-color:#707070}.mt-note  .mk-tail{border-top-color:#707070}
+
+/* ══ ADD POPUP ══ */
+#add-popup{
+  position:fixed;z-index:500;background:#150f2af2;
+  border:1.5px solid #5a4090;border-radius:12px;padding:16px;
+  width:300px;box-shadow:0 10px 36px #000c;display:none;
+}
+#add-popup.vis{display:block}
+#add-popup h3{font-size:13px;color:#f0d050;margin-bottom:12px;font-weight:600}
+#add-popup label{display:block;font-size:10px;color:#8868b8;margin-bottom:3px;margin-top:6px}
+#add-popup input[type=text],#add-popup textarea{
+  width:100%;background:#0e0a20;border:1px solid #3e2d68;
+  border-radius:6px;color:#e8d9a0;padding:6px 8px;
+  font-size:12px;font-family:inherit;
+}
+#add-popup textarea{resize:vertical;min-height:52px}
+#add-popup input[type=text]:focus,#add-popup textarea:focus{outline:none;border-color:#7848c8}
+.img-upload-area{
+  border:1.5px dashed #3e2d68;border-radius:8px;padding:10px;
+  text-align:center;cursor:pointer;transition:all .18s;margin-top:6px;background:#0e0a1e;
+}
+.img-upload-area:hover{border-color:#7848c8;background:#160e28}
+.img-upload-area .up-hint{font-size:11px;color:#5e4e88}
+.img-upload-area .up-hint span{font-size:18px;display:block;margin-bottom:4px}
+.img-upload-area input[type=file]{display:none}
+#img-preview-strip{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;}
+.prev-thumb{position:relative;width:68px;height:52px;border-radius:6px;overflow:hidden;border:1.5px solid #3e2d68;cursor:pointer;flex-shrink:0;}
+.prev-thumb img{width:100%;height:100%;object-fit:cover}
+.prev-thumb .rm-img{position:absolute;top:2px;right:2px;background:#000a;border:none;color:#ff6060;border-radius:50%;width:16px;height:16px;font-size:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .15s;font-family:inherit;}
+.prev-thumb:hover .rm-img{opacity:1}
+.popup-btns{display:flex;gap:6px;margin-top:12px}
+.btn-ok{flex:1;background:linear-gradient(135deg,#5a2880,#381660);border:1px solid #8850c8;color:#e0c0ff;border-radius:7px;padding:7px;cursor:pointer;font-size:12px;transition:all .18s;font-family:inherit;}
+.btn-ok:hover{background:linear-gradient(135deg,#7838a8,#502090)}
+.btn-cancel{background:#120d24;border:1px solid #3e2d68;color:#8878b0;border-radius:7px;padding:7px 10px;cursor:pointer;font-size:12px;transition:all .18s;font-family:inherit;}
+.btn-cancel:hover{background:#1c1438}
+
+/* ══ REPORT POPUP (사용자 제보) ══ */
+#report-popup{
+  position:fixed;z-index:500;background:#140e20f4;
+  border:1.5px solid #3a7030;border-radius:12px;padding:16px;
+  width:300px;box-shadow:0 10px 36px #000c;display:none;
+}
+#report-popup.vis{display:block}
+#report-popup h3{font-size:13px;color:#80d880;margin-bottom:4px;font-weight:600}
+#report-popup .rp-sub{font-size:10px;color:#507050;margin-bottom:10px;}
+#report-popup label{display:block;font-size:10px;color:#608060;margin-bottom:3px;margin-top:6px}
+#report-popup input[type=text],#report-popup textarea{
+  width:100%;background:#0a120a;border:1px solid #2e5028;
+  border-radius:6px;color:#c8e8c0;padding:6px 8px;font-size:12px;font-family:inherit;
+}
+#report-popup textarea{resize:vertical;min-height:48px}
+#report-popup input:focus,#report-popup textarea:focus{outline:none;border-color:#50a040}
+.rp-coord-preview{
+  font-size:10px;color:#70a060;font-family:monospace;
+  background:#0a120a;border:1px solid #2e5028;border-radius:5px;
+  padding:4px 8px;margin-top:6px;
+}
+.rp-type-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-top:4px;}
+.rp-type-btn{
+  display:flex;flex-direction:column;align-items:center;gap:2px;
+  padding:5px 2px;border-radius:6px;border:1.5px solid #2e4028;
+  background:#0a120a;cursor:pointer;transition:all .18s;
+  font-size:9px;color:#607860;font-family:inherit;
+}
+.rp-type-btn:hover{border-color:#508040;background:#122012}
+.rp-type-btn.selected{border-color:#60c040;background:#102010;color:#80e060;font-weight:600}
+.rp-type-btn .ico{font-size:16px;line-height:1}
+#report-popup .popup-btns{margin-top:10px}
+.btn-report-ok{flex:1;background:linear-gradient(135deg,#1a4a18,#0e2e0e);border:1px solid #40a030;color:#80e070;border-radius:7px;padding:7px;cursor:pointer;font-size:12px;transition:all .18s;font-family:inherit;}
+.btn-report-ok:hover{background:linear-gradient(135deg,#286a28,#183e18)}
+
+/* ══ DETAIL POPUP ══ */
+#detail-popup{
+  position:fixed;z-index:500;background:#150f2af5;
+  border:1.5px solid #5a4090;border-radius:12px;padding:16px;
+  width:320px;max-height:80vh;overflow-y:auto;
+  box-shadow:0 10px 36px #000c;display:none;
+  scrollbar-width:thin;scrollbar-color:#3e2d6e transparent;
+}
+#detail-popup::-webkit-scrollbar{width:4px}
+#detail-popup::-webkit-scrollbar-thumb{background:#3e2d6e;border-radius:2px}
+#detail-popup.vis{display:block}
+.dp-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px}
+.dp-title{font-size:14px;color:#f0d050;font-weight:600;line-height:1.3}
+.dp-coord{display:flex;align-items:center;gap:6px;margin-top:4px;}
+.dp-coord-val{font-size:11px;color:#a888d8;background:#0e0a1e;border:1px solid #3e2d60;border-radius:5px;padding:2px 8px;font-family:monospace;letter-spacing:.5px;}
+.dp-coord-copy{font-size:10px;background:#1e1440;border:1px solid #3e2d60;color:#7868a8;border-radius:5px;padding:2px 7px;cursor:pointer;transition:all .15s;font-family:inherit;white-space:nowrap;}
+.dp-coord-copy:hover{background:#2e1e58;color:#d4b8f8;border-color:#6848a8}
+.dp-close{background:none;border:none;color:#6e5e98;font-size:18px;cursor:pointer;padding:0 2px;transition:color .15s;font-family:inherit;flex-shrink:0;}
+.dp-close:hover{color:#d04040}
+.dp-note{font-size:12px;color:#c0a8e8;line-height:1.6;background:#0e0a1e;border-radius:6px;padding:8px 10px;margin-bottom:10px;white-space:pre-wrap;word-break:break-word;}
+.dp-imgs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+.dp-img-thumb{width:88px;height:66px;border-radius:6px;overflow:hidden;border:1.5px solid #3e2d68;cursor:pointer;flex-shrink:0;transition:border-color .15s;}
+.dp-img-thumb:hover{border-color:#8858c8}
+.dp-img-thumb img{width:100%;height:100%;object-fit:cover}
+.dp-actions{display:flex;gap:6px;margin-top:8px}
+.dp-btn-edit{flex:1;background:linear-gradient(135deg,#1e3060,#0e1840);border:1px solid #3858a0;color:#88a8e8;border-radius:7px;padding:6px;cursor:pointer;font-size:11px;transition:all .18s;font-family:inherit;}
+.dp-btn-edit:hover{background:linear-gradient(135deg,#2a4080,#182460)}
+.dp-btn-del{background:linear-gradient(135deg,#501020,#300810);border:1px solid #903028;color:#f09080;border-radius:7px;padding:6px 10px;cursor:pointer;font-size:11px;transition:all .18s;font-family:inherit;}
+.dp-btn-del:hover{background:linear-gradient(135deg,#701428,#481010)}
+
+/* ══ LIGHTBOX ══ */
+#lightbox{position:fixed;inset:0;z-index:900;background:#000c;display:none;align-items:center;justify-content:center;flex-direction:column;gap:12px;}
+#lightbox.vis{display:flex}
+#lb-img{max-width:90vw;max-height:80vh;border-radius:8px;border:2px solid #5a4090;box-shadow:0 8px 40px #000e;object-fit:contain;}
+#lb-close{position:fixed;top:16px;right:20px;background:none;border:none;color:#c8a8f8;font-size:32px;cursor:pointer;z-index:901;transition:color .15s;font-family:inherit;}
+#lb-close:hover{color:#fff}
+#lb-caption{font-size:12px;color:#a888d8;text-align:center}
+.lb-nav{position:fixed;top:50%;transform:translateY(-50%);background:#1a1030bb;border:1.5px solid #5a4090;color:#c8a8f8;font-size:24px;cursor:pointer;width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;transition:all .18s;font-family:inherit;z-index:901;}
+.lb-nav:hover{background:#3a2060;color:#fff}
+#lb-prev{left:16px}
+#lb-next{right:16px}
+
+/* ══ INFO TIP ══ */
+#info-tip{position:fixed;z-index:400;background:#150f2af0;border:1.5px solid #5a4090;border-radius:9px;padding:9px 13px;max-width:220px;pointer-events:none;display:none;font-size:12px;box-shadow:0 4px 18px #000a;}
+#info-tip.vis{display:block}
+#info-tip .t-title{font-size:12px;color:#f0d050;margin-bottom:3px;font-weight:600}
+#info-tip .t-note{color:#b8a0d8;line-height:1.5;font-size:11px}
+#info-tip .t-imgs{font-size:10px;color:#50a050;margin-top:3px}
+
+/* ══ MODE INDICATOR ══ */
+#mode-ind{position:fixed;top:98px;left:50%;transform:translateX(-50%);z-index:300;background:#200a14ee;border:1.5px solid #901820;border-radius:20px;padding:5px 18px;font-size:12px;color:#ff9878;display:none;pointer-events:none;}
+#mode-ind.vis{display:block}
+#mode-ind.report-mode{background:#0a1a0aee;border-color:#306820;color:#80d870}
+
+/* ══ ZOOM ══ */
+#zoom-wrap{position:fixed;bottom:134px;right:16px;z-index:150;display:flex;flex-direction:column;gap:3px;}
+.zoom-btn{width:34px;height:34px;background:#130e26ee;border:1.5px solid #3e2d6e;color:#b898e8;border-radius:7px;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .18s;font-family:inherit;}
+.zoom-btn:hover{background:#1e1440;border-color:#6848b0;color:#fff}
+#zoom-pct{text-align:center;font-size:10px;color:#5e4e88;padding:1px 0}
+
+/* ══ MINIMAP ══ */
+#mm-wrap{position:fixed;bottom:16px;right:16px;z-index:150;background:#130e26cc;border:1.5px solid #3e2d6e;border-radius:9px;overflow:hidden;cursor:pointer;}
+#mm-canvas{display:block;width:176px;height:99px}
+#mm-vp{position:absolute;top:0;left:0;border:2px solid #f0b020;pointer-events:none;border-radius:2px;}
+
+/* ══ COORD ══ */
+#coord{position:fixed;bottom:16px;left:286px;z-index:150;background:#130e26cc;border:1px solid #2e1f50;border-radius:5px;padding:3px 10px;font-size:10px;color:#5e4e80;pointer-events:none;font-family:monospace;}
+
+/* ══ TOAST ══ */
+#toast{
+  position:fixed;bottom:130px;left:286px;z-index:600;
+  background:#1a1030ee;border:1.5px solid #60c060;
+  border-radius:8px;padding:6px 14px;font-size:12px;
+  color:#60c060;pointer-events:none;opacity:0;
+  transition:opacity .3s;font-family:inherit;
+}
+
+/* ══ ADMIN LOGIN MODAL ══ */
+#admin-modal{position:fixed;inset:0;z-index:700;background:#0009;display:none;align-items:center;justify-content:center;}
+#admin-modal.vis{display:flex}
+#am-box{background:#150f2a;border:1.5px solid #5a4090;border-radius:12px;padding:24px;width:320px;box-shadow:0 10px 36px #000c;}
+#am-box h3{color:#f0d050;font-size:15px;margin-bottom:6px;}
+#am-box p{font-size:11px;color:#7858a8;margin-bottom:16px;line-height:1.5;}
+#am-box label{font-size:10px;color:#7858a8;display:block;margin-bottom:4px}
+#am-box input{width:100%;background:#0e0a20;border:1px solid #3e2d68;border-radius:6px;color:#e8d9a0;padding:7px 10px;font-size:13px;font-family:inherit;margin-bottom:12px;}
+#am-box input:focus{outline:none;border-color:#7848c8}
+.am-btns{display:flex;gap:8px;justify-content:flex-end}
+
+/* ══ IO MODAL ══ */
+#io-modal{position:fixed;inset:0;z-index:700;background:#0009;display:none;align-items:center;justify-content:center;}
+#io-modal.vis{display:flex}
+#io-box{background:#150f2a;border:1.5px solid #5a4090;border-radius:12px;padding:22px 24px;width:480px;max-width:95vw;box-shadow:0 10px 36px #000c;}
+#io-box h2{color:#f0d050;font-size:15px;margin-bottom:12px}
+#io-box textarea{width:100%;height:180px;background:#0e0a20;border:1px solid #3e2d68;border-radius:7px;color:#e8d9a0;padding:10px;font-size:11px;font-family:monospace;resize:vertical;}
+.io-btns{display:flex;gap:8px;margin-top:10px;justify-content:flex-end}
+
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:#3e2d6e;border-radius:3px}
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div id="topbar">
+  <div id="topbar-title">⚔️ 일곱 개의 대죄: 오리진</div>
+  <div class="tb-sep"></div>
+  <!-- 관리자 전용 버튼 (로그인 후 표시) -->
+  <button class="tb-btn" id="btn-add" onclick="setMode('add')" style="display:none">✚ 마커 추가</button>
+  <button class="tb-btn" id="btn-move" onclick="setMode('move')" style="display:none">✥ 이동</button>
+  <button class="tb-btn danger" id="btn-del" onclick="setMode('delete')" style="display:none">🗑 삭제</button>
+  <div class="tb-sep" id="admin-sep" style="display:none"></div>
+  <!-- 일반 사용자 버튼 -->
+  <button class="tb-btn report-btn" id="btn-report" onclick="setMode('report')">📍 위치 제보하기</button>
+  <div class="tb-spacer"></div>
+  <div id="admin-badge">👑 관리자 모드</div>
+  <button class="tb-btn" id="btn-admin-login" onclick="openAdminLogin()" style="font-size:11px">🔑 관리자</button>
+  <button class="tb-btn" id="btn-admin-logout" onclick="adminLogout()" style="display:none;font-size:11px">🔓 로그아웃</button>
+</div>
+
+<!-- REGION TAB BAR -->
+<div id="region-bar">
+  <button class="tab-add-btn" onclick="openRegionModal()" title="지역 추가" style="display:none">＋</button>
+</div>
+
+<!-- MODE INDICATOR -->
+<div id="mode-ind"></div>
+
+<!-- MAIN -->
+<div id="main">
+  <!-- SIDEBAR -->
+  <div id="sidebar">
+    <!-- 관리자: 마커 종류 선택 (관리자만 표시) -->
+    <div class="sb-section" id="type-section" style="display:none">
+      <div class="sb-title">마커 종류</div>
+      <div class="mt-grid">
+        <button class="mt-btn selected" data-type="chest" onclick="selType('chest')">
+          <span class="ico"><svg width="24" height="18" viewBox="0 0 32 24" fill="none">
+            <rect x="2" y="10" width="28" height="12" rx="2" fill="#8B5E2A" stroke="#f0b020" stroke-width="1.5"/>
+            <path d="M2 12 Q2 4 16 4 Q30 4 30 12Z" fill="#A0722A" stroke="#f0b020" stroke-width="1.5"/>
+            <rect x="12" y="13" width="8" height="6" rx="1" fill="#d4940a" stroke="#f0b020" stroke-width="1"/>
+            <circle cx="16" cy="16" r="1.5" fill="#0e0a1e"/>
+          </svg></span>
+          <span class="lbl" style="font-size:9px">보물상자</span>
+        </button>
+        <button class="mt-btn" data-type="boss" onclick="selType('boss')"><span class="ico">💀</span><span class="lbl" style="font-size:9px">보스</span></button>
+        <button class="mt-btn" data-type="npc" onclick="selType('npc')"><span class="ico">👤</span><span class="lbl" style="font-size:9px">NPC</span></button>
+        <button class="mt-btn" data-type="quest" onclick="selType('quest')"><span class="ico">❗</span><span class="lbl" style="font-size:9px">퀘스트</span></button>
+        <button class="mt-btn" data-type="portal" onclick="selType('portal')"><span class="ico">🌀</span><span class="lbl" style="font-size:9px">포탈</span></button>
+        <button class="mt-btn" data-type="note" onclick="selType('note')"><span class="ico">📝</span><span class="lbl" style="font-size:9px">메모</span></button>
+      </div>
+    </div>
+
+    <!-- 관리자: 제보 대기 목록 -->
+    <div class="pending-section" id="pending-section">
+      <div class="pending-header">
+        <div class="sb-title" style="margin-bottom:0">📬 제보 대기 <span id="pending-count-lbl" style="color:#f08060"></span></div>
+        <button class="btn-cancel" style="padding:2px 7px;font-size:10px" onclick="refreshPending()">↺</button>
+      </div>
+      <div id="pending-list"></div>
+    </div>
+
+    <!-- 마커 목록 -->
+    <div id="sb-list-wrap">
+      <div id="sb-empty">마커가 없습니다.</div>
+    </div>
+    <div id="sb-stats">
+      <div class="stat-b"><svg width="13" height="10" viewBox="0 0 32 24"><rect x="2" y="10" width="28" height="12" rx="2" fill="#8B5E2A" stroke="#f0b020" stroke-width="2"/><path d="M2 12 Q2 4 16 4 Q30 4 30 12Z" fill="#A0722A" stroke="#f0b020" stroke-width="2"/></svg><span id="st-chest">0</span></div>
+      <div class="stat-b">💀<span id="st-boss">0</span></div>
+      <div class="stat-b">👤<span id="st-npc">0</span></div>
+      <div class="stat-b">❗<span id="st-quest">0</span></div>
+      <div class="stat-b">🌀<span id="st-portal">0</span></div>
+      <div class="stat-b">📝<span id="st-note">0</span></div>
+    </div>
+  </div>
+
+  <!-- MAP -->
+  <div id="map-vp">
+    <div id="map-cont">
+      <img id="map-img" src="map_lioness.png" alt="지도" draggable="false"/>
+      <div id="mk-layer"></div>
+    </div>
+  </div>
+</div>
+
+<!-- COORD -->
+<div id="coord">X: — &nbsp; Y: —</div>
+<!-- ZOOM -->
+<div id="zoom-wrap">
+  <button class="zoom-btn" onclick="zoomIn()">＋</button>
+  <div id="zoom-pct">100%</div>
+  <button class="zoom-btn" onclick="zoomOut()">－</button>
+  <button class="zoom-btn" onclick="zoomReset()">⊙</button>
+</div>
+<!-- MINIMAP -->
+<div id="mm-wrap" title="클릭하여 이동">
+  <canvas id="mm-canvas" width="176" height="99"></canvas>
+  <div id="mm-vp"></div>
+</div>
+<!-- TOAST -->
+<div id="toast"></div>
+
+<!-- ADD POPUP (관리자) -->
+<div id="add-popup">
+  <h3 id="add-title">📍 마커 추가</h3>
+  <label>이름 <span style="color:#5e4e78;font-size:9px">(선택)</span></label>
+  <input type="text" id="ap-name" placeholder="마커 이름..." maxlength="40"/>
+  <label>메모 <span style="color:#5e4e78;font-size:9px">(선택)</span></label>
+  <textarea id="ap-note" placeholder="메모 내용..."></textarea>
+  <label>사진 <span style="color:#5e4e78;font-size:9px">(선택 · 여러 장)</span></label>
+  <div class="img-upload-area" onclick="document.getElementById('ap-file').click()">
+    <input type="file" id="ap-file" accept="image/*" multiple onchange="handleFileSelect(event)"/>
+    <div class="up-hint"><span>📷</span>클릭하거나 드래그</div>
+  </div>
+  <div id="img-preview-strip"></div>
+  <div class="popup-btns">
+    <button class="btn-cancel" onclick="cancelAdd()">취소</button>
+    <button class="btn-ok" onclick="confirmAdd()">추가</button>
+  </div>
+</div>
+
+<!-- REPORT POPUP (일반 사용자 제보) -->
+<div id="report-popup">
+  <h3>📍 위치 제보하기</h3>
+  <div class="rp-sub">관리자가 확인 후 정식 마커로 등록됩니다<br><span style="color:#407040;font-size:9px">💡 GitHub 계정으로 이슈가 자동 작성됩니다</span></div>
+  <label>마커 종류</label>
+  <div class="rp-type-grid">
+    <button class="rp-type-btn selected" data-type="chest" onclick="selReportType('chest')">
+      <span class="ico"><svg width="20" height="15" viewBox="0 0 32 24" fill="none"><rect x="2" y="10" width="28" height="12" rx="2" fill="#8B5E2A" stroke="#f0b020" stroke-width="1.5"/><path d="M2 12 Q2 4 16 4 Q30 4 30 12Z" fill="#A0722A" stroke="#f0b020" stroke-width="1.5"/></svg></span>
+      <span>보물상자</span>
+    </button>
+    <button class="rp-type-btn" data-type="boss" onclick="selReportType('boss')"><span class="ico">💀</span><span>보스</span></button>
+    <button class="rp-type-btn" data-type="npc" onclick="selReportType('npc')"><span class="ico">👤</span><span>NPC</span></button>
+    <button class="rp-type-btn" data-type="quest" onclick="selReportType('quest')"><span class="ico">❗</span><span>퀘스트</span></button>
+    <button class="rp-type-btn" data-type="portal" onclick="selReportType('portal')"><span class="ico">🌀</span><span>포탈</span></button>
+    <button class="rp-type-btn" data-type="note" onclick="selReportType('note')"><span class="ico">📝</span><span>메모</span></button>
+  </div>
+  <label>위치 좌표</label>
+  <div class="rp-coord-preview" id="rp-coord-preview">X: -, Y: -</div>
+  <label>설명 <span style="color:#3a5030;font-size:9px">(선택)</span></label>
+  <textarea id="rp-note" placeholder="위치 설명을 입력하세요...&#10;예) 동굴 입구 근처, 나무 아래 등" style="min-height:60px"></textarea>
+  <div style="margin-top:8px;padding:6px 8px;background:#0d1a0d;border:1px solid #2a4a2a;border-radius:5px;font-size:9px;color:#507050;line-height:1.5">
+    📌 클릭 시 GitHub 이슈 페이지가 열립니다.<br>내용을 확인 후 <strong style="color:#70b070">Submit new issue</strong>를 눌러주세요.
+  </div>
+  <div class="popup-btns" style="margin-top:8px">
+    <button class="btn-cancel" onclick="cancelReport()">취소</button>
+    <button class="btn-report-ok" onclick="confirmReport()">📬 GitHub에 제보하기</button>
+  </div>
+</div>
+
+<!-- DETAIL POPUP -->
+<div id="detail-popup">
+  <div class="dp-header">
+    <div>
+      <div class="dp-title" id="dp-title"></div>
+      <div class="dp-coord">
+        <span class="dp-coord-val" id="dp-coord"></span>
+        <button class="dp-coord-copy" onclick="copyCoord()">📋 복사</button>
+      </div>
+    </div>
+    <button class="dp-close" onclick="closeDetail()">✕</button>
+  </div>
+  <div class="dp-note" id="dp-note" style="display:none"></div>
+  <div class="dp-imgs" id="dp-imgs"></div>
+  <div class="dp-actions" id="dp-actions"></div>
+</div>
+
+<!-- LIGHTBOX -->
+<div id="lightbox" onclick="if(event.target===this)closeLB()">
+  <button id="lb-close" onclick="closeLB()">✕</button>
+  <button class="lb-nav" id="lb-prev" onclick="lbNav(-1)">‹</button>
+  <img id="lb-img" src="" alt=""/>
+  <div id="lb-caption"></div>
+  <button class="lb-nav" id="lb-next" onclick="lbNav(1)">›</button>
+</div>
+
+<!-- INFO TIP -->
+<div id="info-tip">
+  <div class="t-title" id="tip-title"></div>
+  <div class="t-note" id="tip-note"></div>
+  <div class="t-imgs" id="tip-imgs"></div>
+</div>
+
+<!-- ADMIN LOGIN MODAL -->
+<div id="admin-modal">
+  <div id="am-box">
+    <h3>🔑 관리자 로그인</h3>
+    <p>GitHub Personal Access Token을 입력하세요.<br>
+    <span style="font-size:10px;color:#504070">repo 권한 필요 · 브라우저에만 저장됨</span></p>
+    <label>GitHub Token <a href="https://github.com/settings/tokens/new?scopes=repo&description=SDSO+Map+Admin" target="_blank" style="color:#6848a8;font-size:9px;text-decoration:none">🔗 토큰 발급</a></label>
+    <input type="password" id="am-token" placeholder="ghp_xxxxxxxxxxxx"/>
+    <label>저장소 (owner/repo)</label>
+    <input type="text" id="am-repo" placeholder="LaWoonGShortS/sevenDeadlySins"/>
+    <label>관리자 비밀번호</label>
+    <input type="password" id="am-pass" placeholder="비밀번호 입력"/>
+    <div class="am-btns">
+      <button class="btn-cancel" onclick="closeAdminLogin()">취소</button>
+      <button class="btn-ok" onclick="confirmAdminLogin()">로그인</button>
+    </div>
+  </div>
+</div>
+
+<!-- IO MODAL -->
+<div id="io-modal">
+  <div id="io-box">
+    <h2 id="io-title">💾 내보내기</h2>
+    <textarea id="io-text"></textarea>
+    <div class="io-btns">
+      <button class="btn-cancel" onclick="closeIO()">닫기</button>
+      <button class="btn-ok" id="io-act">복사</button>
+    </div>
+  </div>
+</div>
+
+<!-- REGION MODAL (관리자: 지역 추가/편집) -->
+<div id="region-modal" style="position:fixed;inset:0;z-index:700;background:#0009;display:none;align-items:center;justify-content:center;">
+  <div style="background:#150f2a;border:1.5px solid #5a4090;border-radius:12px;padding:22px 24px;width:320px;box-shadow:0 10px 36px #000c;">
+    <h3 style="color:#f0d050;font-size:14px;margin-bottom:14px">🗺 지역 추가</h3>
+    <label style="font-size:10px;color:#7858a8;display:block;margin-bottom:4px">지역 이름</label>
+    <input type="text" id="rm-name" placeholder="예) 2. 리오네스 왕국" style="width:100%;background:#0e0a20;border:1px solid #3e2d68;border-radius:6px;color:#e8d9a0;padding:7px 10px;font-size:13px;font-family:inherit;margin-bottom:12px;box-sizing:border-box;"/>
+    <label style="font-size:10px;color:#7858a8;display:block;margin-bottom:4px">맵 이미지 파일명 <span style="color:#503070;font-size:9px">(docs/ 폴더에 있는 파일)</span></label>
+    <input type="text" id="rm-file" placeholder="예) map_kingdom.png" style="width:100%;background:#0e0a20;border:1px solid #3e2d68;border-radius:6px;color:#e8d9a0;padding:7px 10px;font-size:13px;font-family:inherit;margin-bottom:16px;box-sizing:border-box;"/>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="btn-cancel" onclick="closeRegionModal()">취소</button>
+      <button class="btn-ok" onclick="confirmRegion()">추가</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ================================================================
+   일곱 개의 대죄: 오리진 — 지도 v3.0
+   GitHub Pages + GitHub Issues 제보 시스템
+   ================================================================ */
+
+// ── 설정 ─────────────────────────────────────────────────────
+// ★ 아래 두 값을 본인 레포로 수정하세요
+const DEFAULT_REPO  = 'LaWoonGShortS/sevenDeadlySins';
+const MARKERS_PATH  = 'docs/markers.json';  // 레포 내 마커 파일 경로
+const ADMIN_PW_HASH = 'sdso_admin_2024';    // ★ 관리자 비밀번호 (변경 권장)
+const ISSUE_LABEL   = '제보';               // GitHub Issues 라벨명
+const ADMIN_KEY     = 'sdso_admin_v3';
+
+// ── 타입 ─────────────────────────────────────────────────────
+const TYPES={
+  chest:{label:'보물상자',color:'#f0b020',svg:true},
+  boss: {label:'보스',    color:'#d02818',emoji:'💀'},
+  npc:  {label:'NPC',     color:'#28a0e0',emoji:'👤'},
+  quest:{label:'퀘스트',  color:'#58c038',emoji:'❗'},
+  portal:{label:'포탈',   color:'#b858e8',emoji:'🌀'},
+  note: {label:'메모',    color:'#707070',emoji:'📝'},
+};
+
+// ── 상태 ─────────────────────────────────────────────────────
+let regions=[], curRegionId=null;
+let zoom=0.30, panX=0, panY=0;
+let isPan=false, panMoved=false, panSX=0,panSY=0,panOX=0,panOY=0;
+let mode='view'; // view | add | move | delete | report
+let selType_='chest', reportType_='chest';
+let pendX=0, pendY=0, pendImgs=[];
+let focusedId=null, currentDetailId=null, editingId=null;
+let lbImgs=[], lbIdx=0;
+let isAdmin=false;
+let ghToken='', ghRepo=DEFAULT_REPO;
+let pendingReports=[];  // GitHub Issues에서 불러온 제보 목록
+
+// ── DOM ──────────────────────────────────────────────────────
+const vp=document.getElementById('map-vp');
+const cont=document.getElementById('map-cont');
+const mapImg=document.getElementById('map-img');
+const mkLayer=document.getElementById('mk-layer');
+const modeInd=document.getElementById('mode-ind');
+const mmCanvas=document.getElementById('mm-canvas');
+const mmVP=document.getElementById('mm-vp');
+const mmCtx=mmCanvas.getContext('2d');
+const coordEl=document.getElementById('coord');
+const regionBar=document.getElementById('region-bar');
+const mmImg=new Image();
+mmImg.onload=()=>updateMM();
+
+// ── Toast ────────────────────────────────────────────────────
+let toastT=null;
+function showToast(msg,color='#60c060'){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.style.borderColor=color; t.style.color=color;
+  t.style.opacity='1';
+  clearTimeout(toastT);
+  toastT=setTimeout(()=>{t.style.opacity='0'},2500);
+}
+
+// ── 관리자 인증 ───────────────────────────────────────────────
+function loadAdminSession(){
+  try{
+    const s=JSON.parse(localStorage.getItem(ADMIN_KEY)||'null');
+    if(!s)return;
+    ghToken=s.token||''; ghRepo=s.repo||DEFAULT_REPO;
+    setAdminUI(true);
+  }catch(e){}
+}
+function setAdminUI(on){
+  isAdmin=on;
+  // 버튼 표시/숨김
+  ['btn-add','btn-move','btn-del','admin-sep'].forEach(id=>{
+    document.getElementById(id).style.display=on?'':'none';
+  });
+  document.getElementById('admin-badge').classList.toggle('vis',on);
+  document.getElementById('btn-admin-login').style.display=on?'none':'';
+  document.getElementById('btn-admin-logout').style.display=on?'':'none';
+  document.getElementById('type-section').style.display=on?'':'none';
+  document.getElementById('pending-section').classList.toggle('vis',on);
+  // tab-add-btn 표시/숨김
+  const addBtn=document.querySelector('.tab-add-btn');
+  if(addBtn) addBtn.style.display=on?'':'none';
+  if(on){ setMode('add'); refreshPending(); renderTabs(); }
+  else  { setMode('view'); renderTabs(); }
+}
+function openAdminLogin(){
+  document.getElementById('am-repo').value=ghRepo||DEFAULT_REPO;
+  document.getElementById('am-token').value='';
+  document.getElementById('am-pass').value='';
+  document.getElementById('admin-modal').classList.add('vis');
+  setTimeout(()=>document.getElementById('am-token').focus(),50);
+}
+function closeAdminLogin(){document.getElementById('admin-modal').classList.remove('vis')}
+function confirmAdminLogin(){
+  const token=document.getElementById('am-token').value.trim();
+  const repo=document.getElementById('am-repo').value.trim()||DEFAULT_REPO;
+  const pass=document.getElementById('am-pass').value.trim();
+  if(pass!==ADMIN_PW_HASH){ showToast('❌ 비밀번호가 틀렸습니다','#e05050'); return; }
+  if(!token){ showToast('❌ GitHub Token을 입력하세요','#e05050'); return; }
+  ghToken=token; ghRepo=repo;
+  localStorage.setItem(ADMIN_KEY, JSON.stringify({token,repo}));
+  closeAdminLogin();
+  setAdminUI(true);
+  showToast('✅ 관리자 로그인 완료');
+}
+function adminLogout(){
+  localStorage.removeItem(ADMIN_KEY);
+  ghToken=''; setAdminUI(false);
+  showToast('로그아웃됨','#a0a0a0');
+}
+
+// ── GitHub API 헬퍼 ───────────────────────────────────────────
+async function ghFetch(method, path, body){
+  const headers={'Accept':'application/vnd.github.v3+json'};
+  if(ghToken) headers['Authorization']=`token ${ghToken}`;
+  const opts={method, headers};
+  if(body) { headers['Content-Type']='application/json'; opts.body=JSON.stringify(body); }
+  const res=await fetch(`https://api.github.com${path}`, opts);
+  if(!res.ok){
+    const e=await res.json().catch(()=>({}));
+    throw new Error(e.message||res.statusText);
+  }
+  return res.json();
+}
+
+// ── localStorage 백업 키 ──────────────────────────────────────
+const LS_MARKERS_KEY = 'sdso_markers_backup_v3';
+
+// ── markers.json 로드 (GitHub Raw 우선 → localStorage 폴백) ──
+async function loadMarkersFromGitHub(){
+  try{
+    const [owner,repo]=ghRepo.split('/');
+    // cache bust
+    const url=`https://raw.githubusercontent.com/${owner}/${repo}/main/${MARKERS_PATH}?t=${Date.now()}`;
+    const res=await fetch(url);
+    if(!res.ok) throw new Error('markers.json 로드 실패');
+    const data=await res.json();
+    // GitHub에서 성공적으로 로드하면 localStorage에도 백업
+    try{ localStorage.setItem(LS_MARKERS_KEY, JSON.stringify(data)); }catch(e){}
+    return data;
+  }catch(e){
+    console.warn('GitHub 로드 실패, localStorage 백업 사용:', e);
+    // localStorage 백업에서 복원
+    try{
+      const saved=localStorage.getItem(LS_MARKERS_KEY);
+      if(saved){
+        const data=JSON.parse(saved);
+        if(Array.isArray(data)&&data.length>0){
+          showToast('⚠️ 오프라인 백업에서 로드됨','#f0c040');
+          return data;
+        }
+      }
+    }catch(e2){}
+    return null;
+  }
+}
+
+// ── markers.json 저장 (GitHub Contents API + localStorage 백업) ──
+async function saveMarkersToGitHub(data){
+  // 항상 localStorage에 먼저 백업 (데이터 유실 방지)
+  try{ localStorage.setItem(LS_MARKERS_KEY, JSON.stringify(data)); }catch(e){}
+
+  if(!ghToken){ showToast('⚠️ 관리자 로그인 필요 — 로컬 백업만 저장됨','#f0a030'); return false; }
+  try{
+    const [owner,repo]=ghRepo.split('/');
+    const path=`/repos/${owner}/${repo}/contents/${MARKERS_PATH}`;
+    // 현재 파일 SHA 가져오기
+    let sha='';
+    try{
+      const info=await ghFetch('GET', path);
+      sha=info.sha;
+    }catch(e){}
+    const content=btoa(unescape(encodeURIComponent(JSON.stringify(data, null, 2))));
+    const body={message:'chore: 마커 데이터 업데이트', content, sha: sha||undefined};
+    if(!sha) delete body.sha;
+    await ghFetch('PUT', path, body);
+    showToast('✅ GitHub에 저장됨 (영구 보존)');
+    return true;
+  }catch(e){
+    showToast('⚠️ GitHub 저장 실패 (로컬 백업은 유지): '+e.message,'#e05050');
+    return false;
+  }
+}
+
+// ── 제보 (GitHub Issue 직접 링크 방식 - 토큰 불필요) ──────────
+function submitReport(regionId, regionName, type, x, y, note){
+  const typeLabel=TYPES[type].label;
+  const title=`[제보] ${regionName} - ${typeLabel}`;
+  const body=[
+    `**지역:** ${regionName}`,
+    `**종류:** ${typeLabel}`,
+    `**좌표:** X: ${x}, Y: ${y}`,
+    `**설명:** ${note||'(없음)'}`,
+    ``,
+    `---`,
+    `> 이 제보는 자동으로 생성되었습니다.`,
+    `> 관리자 확인 후 마커로 등록됩니다.`,
+    ``,
+    `<!-- SDSO_REPORT`,
+    `regionId:${regionId}`,
+    `type:${type}`,
+    `x:${x}`,
+    `y:${y}`,
+    `-->`
+  ].join('\n');
+
+  const [owner,repo]=DEFAULT_REPO.split('/');
+  // GitHub Issues 새 이슈 직접 링크 (토큰 없이도 동작)
+  const issueUrl=`https://github.com/${owner}/${repo}/issues/new?title=${encodeURIComponent(title)}&body=${encodeURIComponent(body)}&labels=${encodeURIComponent(ISSUE_LABEL)}`;
+  window.open(issueUrl,'_blank');
+}
+
+// ── 제보 목록 불러오기 (Issues) ───────────────────────────────
+async function refreshPending(){
+  if(!isAdmin) return;
+  try{
+    const [owner,repo]=ghRepo.split('/');
+    const issues=await ghFetch('GET',
+      `/repos/${owner}/${repo}/issues?state=open&labels=${encodeURIComponent(ISSUE_LABEL)}&per_page=50`);
+    pendingReports=issues.map(issue=>{
+      // body에서 메타 파싱
+      const meta={};
+      const match=issue.body&&issue.body.match(/<!-- SDSO_REPORT\n([\s\S]*?)-->/);
+      if(match){
+        match[1].split('\n').forEach(line=>{
+          const [k,v]=line.split(':');
+          if(k&&v!==undefined) meta[k.trim()]=v.trim();
+        });
+      }
+      return {
+        issueNumber: issue.number,
+        title: issue.title,
+        regionId: meta.regionId||curRegionId,
+        type: meta.type||'note',
+        x: parseInt(meta.x)||0,
+        y: parseInt(meta.y)||0,
+        note: (issue.body||'').split('**설명:**')[1]?.split('\n')[0]?.trim()||'',
+        url: issue.html_url,
+      };
+    });
+    renderPendingList();
+  }catch(e){
+    showToast('제보 불러오기 실패: '+e.message,'#e05050');
+  }
+}
+
+function renderPendingList(){
+  const list=document.getElementById('pending-list');
+  const lbl=document.getElementById('pending-count-lbl');
+  const cnt=pendingReports.length;
+  lbl.textContent=cnt?`(${cnt}건)`:'(없음)';
+  // 탭 뱃지
+  document.querySelectorAll('.tab-pending').forEach(b=>{
+    const regionId=b.closest('.region-tab')?.dataset?.regionId;
+    const c=pendingReports.filter(p=>p.regionId===regionId).length;
+    b.textContent=c; b.classList.toggle('vis',c>0);
+  });
+  if(!cnt){ list.innerHTML='<div style="font-size:11px;color:#5a4050;padding:6px 2px;text-align:center">대기 중인 제보 없음</div>'; return; }
+  list.innerHTML='';
+  pendingReports.forEach(p=>{
+    const t=TYPES[p.type]||TYPES.note;
+    const icoHtml=p.type==='chest'?chestSVG(16):`<span class="pi-type">${t.emoji}</span>`;
+    const d=document.createElement('div');
+    d.className='pending-item';
+    d.innerHTML=`
+      <div class="pi-top">
+        ${icoHtml}
+        <span class="pi-name">${esc(t.label)} #${p.issueNumber}</span>
+        <a href="${p.url}" target="_blank" style="font-size:9px;color:#7868a8;text-decoration:none" title="Issue 보기">🔗</a>
+      </div>
+      <div class="pi-coord">X:${p.x} Y:${p.y} | ${regions.find(r=>r.id===p.regionId)?.name||p.regionId}</div>
+      ${p.note?`<div class="pi-note">${esc(p.note)}</div>`:''}
+      <div class="pi-btns">
+        <button class="pi-btn-ok" onclick="approvePending(${p.issueNumber})">✔ 승인</button>
+        <button class="pi-btn-no" onclick="rejectPending(${p.issueNumber})">✕ 거절</button>
+      </div>`;
+    // 제보 위치로 이동
+    d.querySelector('.pi-coord').style.cursor='pointer';
+    d.querySelector('.pi-coord').onclick=()=>panToCoord(p.x, p.y, p.regionId);
+    // 임시 마커 표시
+    showPendingMarker(p);
+    list.appendChild(d);
+  });
+}
+
+// 임시 제보 마커 맵에 표시
+let pendingMarkerEls=[];
+function clearPendingMarkers(){
+  pendingMarkerEls.forEach(el=>el.remove());
+  pendingMarkerEls=[];
+}
+function showPendingMarker(p){
+  if(p.regionId!==curRegionId) return;
+  const div=document.createElement('div');
+  div.className=`map-marker mt-${p.type} pending-marker`;
+  div.style.left=p.x+'px'; div.style.top=p.y+'px';
+  const t=TYPES[p.type]||TYPES.note;
+  const ico=p.type==='chest'?chestSVG(22):`<span class="mk-ico">${t.emoji}</span>`;
+  div.innerHTML=`<div class="mk-pin">
+    <div class="mk-bubble pending-bubble">
+      <span class="pending-tag">제보</span>
+      ${ico}
+      <span class="mk-coord">${p.x}, ${p.y}</span>
+    </div>
+    <div class="mk-tail" style="border-top-color:#f06020"></div>
+  </div>`;
+  mkLayer.appendChild(div);
+  pendingMarkerEls.push(div);
+}
+
+async function approvePending(issueNumber){
+  const p=pendingReports.find(r=>r.issueNumber===issueNumber);
+  if(!p) return;
+  const markerName=prompt(`마커 이름을 입력하세요 (선택, 빈칸 가능)\n종류: ${TYPES[p.type].label} | X:${p.x} Y:${p.y}`,'');
+  if(markerName===null) return; // 취소
+  // 해당 지역으로 전환 후 마커 추가
+  if(p.regionId!==curRegionId) switchRegion(p.regionId);
+  addMarker({type:p.type, x:p.x, y:p.y, name:markerName.trim(), note:p.note, images:[]});
+  // GitHub에 마커 저장
+  await saveMarkersToGitHub(regions.map(r=>({id:r.id,name:r.name,mapFile:r.mapFile,markers:r.markers.map(({id,type,x,y,name,note,images})=>({id,type,x,y,name,note,images:images||[]}))})));
+  // Issue 닫기
+  try{
+    const [owner,repo]=ghRepo.split('/');
+    await ghFetch('PATCH',`/repos/${owner}/${repo}/issues/${issueNumber}`,
+      {state:'closed'});
+    showToast('✅ 승인 완료 — 마커 등록됨');
+  }catch(e){ showToast('마커 등록됨 (Issue 닫기 실패: '+e.message+')','#f0a030'); }
+  pendingReports=pendingReports.filter(r=>r.issueNumber!==issueNumber);
+  clearPendingMarkers();
+  pendingReports.forEach(q=>{if(q.regionId===curRegionId)showPendingMarker(q)});
+  renderPendingList();
+}
+
+async function rejectPending(issueNumber){
+  if(!confirm('이 제보를 거절하고 Issue를 닫겠습니까?')) return;
+  try{
+    const [owner,repo]=ghRepo.split('/');
+    await ghFetch('PATCH',`/repos/${owner}/${repo}/issues/${issueNumber}`,
+      {state:'closed', body:`❌ 거절됨 - 위치가 정확하지 않습니다.`});
+    showToast('제보 거절됨','#f0a030');
+  }catch(e){ showToast('Issue 닫기 실패: '+e.message,'#e05050'); }
+  pendingReports=pendingReports.filter(r=>r.issueNumber!==issueNumber);
+  clearPendingMarkers();
+  pendingReports.forEach(q=>{if(q.regionId===curRegionId)showPendingMarker(q)});
+  renderPendingList();
+}
+
+// ── 제보 팝업 (사용자) ────────────────────────────────────────
+let reportPendX=0, reportPendY=0;
+function selReportType(t){
+  reportType_=t;
+  document.querySelectorAll('.rp-type-btn').forEach(b=>b.classList.toggle('selected',b.dataset.type===t));
+}
+function openReportPopup(cx,cy,mapX,mapY){
+  reportPendX=mapX; reportPendY=mapY;
+  document.getElementById('rp-coord-preview').textContent=`X: ${mapX},  Y: ${mapY}`;
+  document.getElementById('rp-note').value='';
+  const pw=300;
+  const lft=Math.min(cx+10, window.innerWidth-pw-10);
+  const top_=Math.min(cy-10, window.innerHeight-320);
+  document.getElementById('report-popup').style.left=Math.max(4,lft)+'px';
+  document.getElementById('report-popup').style.top=Math.max(90,top_)+'px';
+  document.getElementById('report-popup').classList.add('vis');
+  setTimeout(()=>document.getElementById('rp-note').focus(),50);
+}
+function cancelReport(){
+  document.getElementById('report-popup').classList.remove('vis');
+}
+function confirmReport(){
+  const note=document.getElementById('rp-note').value.trim();
+  const r=curRegion();
+  if(!r) return;
+  submitReport(curRegionId, r.name, reportType_, reportPendX, reportPendY, note);
+  cancelReport();
+  showToast('📬 GitHub 이슈 페이지가 열렸습니다! 제출하면 관리자가 확인 후 등록합니다.','#60c060');
+  setMode('view');
+}
+
+// ── 지역 관리 ─────────────────────────────────────────────────
+function curRegion(){return regions.find(r=>r.id===curRegionId)||null}
+function curMarkers(){const r=curRegion();return r?r.markers:[]}
+
+function switchRegion(id){
+  mkLayer.innerHTML=''; clearPendingMarkers();
+  focusedId=null; closeDetail(); cancelAdd(); cancelReport();
+  curRegionId=id;
+  const r=curRegion(); if(!r) return;
+  mapImg.src=r.mapFile;
+  mmImg.src=r.mapFile;
+  r.markers.forEach(m=>{m.el=createMarkerEl(m);mkLayer.appendChild(m.el)});
+  if(isAdmin) pendingReports.forEach(p=>{if(p.regionId===id)showPendingMarker(p)});
+  refreshSidebar(); renderTabs(); zoomReset();
+}
+
+function renderTabs(){
+  // 기존 탭들만 지우고 addBtn은 유지
+  const addBtn=document.querySelector('.tab-add-btn');
+  // 탭 버튼들만 제거
+  regionBar.querySelectorAll('.region-tab').forEach(t=>t.remove());
+  // 탭 앞에 삽입
+  regions.forEach(r=>{
+    const tab=document.createElement('button');
+    tab.className='region-tab'+(r.id===curRegionId?' active':'');
+    tab.dataset.regionId=r.id;
+    const cnt=r.markers.length;
+    const pCnt=pendingReports.filter(p=>p.regionId===r.id).length;
+    tab.innerHTML=`<span>${esc(r.name)}</span>
+      <span class="tab-num">${cnt}</span>
+      <span class="tab-pending${pCnt>0?' vis':''}">${pCnt}</span>`;
+    tab.onclick=()=>switchRegion(r.id);
+    regionBar.insertBefore(tab, addBtn||null);
+  });
+  // addBtn 표시/숨김
+  if(addBtn) addBtn.style.display=isAdmin?'':'none';
+}
+
+// ── 지역 모달 ─────────────────────────────────────────────────
+function openRegionModal(){
+  document.getElementById('rm-name').value='';
+  document.getElementById('rm-file').value='';
+  document.getElementById('region-modal').style.display='flex';
+  setTimeout(()=>document.getElementById('rm-name').focus(),50);
+}
+function closeRegionModal(){document.getElementById('region-modal').style.display='none';}
+async function confirmRegion(){
+  const name=document.getElementById('rm-name').value.trim();
+  const file=document.getElementById('rm-file').value.trim();
+  if(!name){showToast('지역 이름을 입력하세요','#e05050');return;}
+  if(!file){showToast('맵 이미지 파일명을 입력하세요','#e05050');return;}
+  const id='region_'+Date.now();
+  regions.push({id, name, mapFile:file, markers:[]});
+  closeRegionModal();
+  switchRegion(id);
+  await saveMarkersToGitHub(regions.map(r=>({id:r.id,name:r.name,mapFile:r.mapFile,markers:r.markers.map(({id,type,x,y,name,note,images})=>({id,type,x,y,name,note,images:images||[]}))})));
+  showToast('✅ 지역 추가됨: '+name);
+}
+
+// ── 마커 종류 선택 ────────────────────────────────────────────
+function selType(t){
+  selType_=t;
+  document.querySelectorAll('.mt-btn').forEach(b=>b.classList.toggle('selected',b.dataset.type===t));
+}
+
+// ── 모드 ─────────────────────────────────────────────────────
+function setMode(m){
+  mode=m;
+  document.getElementById('btn-add')?.classList.toggle('active',m==='add');
+  document.getElementById('btn-move')?.classList.toggle('active',m==='move');
+  document.getElementById('btn-del')?.classList.toggle('danger',m==='delete');
+  document.getElementById('btn-report')?.classList.toggle('active',m==='report');
+  vp.className= m==='delete'?'mode-del': m==='move'?'mode-move': m==='report'?'mode-report': '';
+  modeInd.className='';
+  if(m==='delete'){ modeInd.textContent='🗑 삭제 모드 — 마커 클릭 시 삭제'; modeInd.classList.add('vis'); }
+  else if(m==='move'){ modeInd.textContent='✥ 이동 모드 — 마커를 드래그하여 이동'; modeInd.classList.add('vis'); }
+  else if(m==='report'){ modeInd.textContent='📍 제보 모드 — 맵을 클릭하여 위치 선택'; modeInd.classList.add('vis','report-mode'); }
+  else { modeInd.classList.remove('vis'); }
+  cancelAdd(); cancelReport();
+}
+
+// ── 이미지 업로드 ─────────────────────────────────────────────
+function handleFileSelect(e){
+  Array.from(e.target.files).forEach(f=>{
+    const reader=new FileReader();
+    reader.onload=ev=>{pendImgs.push({dataUrl:ev.target.result,name:f.name});renderPreviewStrip();};
+    reader.readAsDataURL(f);
+  });
+  e.target.value='';
+}
+function renderPreviewStrip(){
+  const strip=document.getElementById('img-preview-strip');
+  strip.innerHTML='';
+  pendImgs.forEach((img,i)=>{
+    const d=document.createElement('div'); d.className='prev-thumb';
+    d.innerHTML=`<img src="${img.dataUrl}"/><button class="rm-img" onclick="removePendImg(${i})">✕</button>`;
+    d.querySelector('img').onclick=()=>openLB([img.dataUrl],0,'');
+    strip.appendChild(d);
+  });
+}
+function removePendImg(i){pendImgs.splice(i,1);renderPreviewStrip()}
+
+// drag&drop
+document.querySelector('.img-upload-area').addEventListener('dragover',e=>{e.preventDefault();e.currentTarget.style.borderColor='#7848c8';});
+document.querySelector('.img-upload-area').addEventListener('dragleave',e=>{e.currentTarget.style.borderColor='';});
+document.querySelector('.img-upload-area').addEventListener('drop',e=>{
+  e.preventDefault();e.currentTarget.style.borderColor='';
+  Array.from(e.dataTransfer.files).filter(f=>f.type.startsWith('image/')).forEach(f=>{
+    const reader=new FileReader();
+    reader.onload=ev=>{pendImgs.push({dataUrl:ev.target.result,name:f.name});renderPreviewStrip();};
+    reader.readAsDataURL(f);
+  });
+});
+
+// ── 맵 클릭 ──────────────────────────────────────────────────
+vp.addEventListener('click',(e)=>{
+  if(isPan&&panMoved)return;
+  if(e.target.closest('.map-marker'))return;
+  const {x,y}=s2m(e.clientX,e.clientY);
+  if(x<0||y<0||x>3000||y>3000)return;
+  if(mode==='add'&&isAdmin){ pendX=Math.round(x);pendY=Math.round(y);openAddPopup(e.clientX,e.clientY); }
+  else if(mode==='report'){  openReportPopup(e.clientX,e.clientY,Math.round(x),Math.round(y)); }
+  else { closeDetail(); }
+});
+
+// ── Add popup (관리자) ────────────────────────────────────────
+function openAddPopup(cx,cy,editId){
+  editingId=editId||null;
+  const m=editId?curMarkers().find(m=>m.id===editId):null;
+  pendImgs=m?(m.images||[]).map(d=>({dataUrl:d,name:''})):[];
+  document.getElementById('add-title').textContent=editId?'✏️ 마커 편집':`📍 ${TYPES[selType_].label} 추가`;
+  document.getElementById('ap-name').value=m?m.name:'';
+  document.getElementById('ap-note').value=m?m.note:'';
+  renderPreviewStrip();
+  const pw=300;
+  document.getElementById('add-popup').style.left=Math.max(4,Math.min(cx+10,window.innerWidth-pw-10))+'px';
+  document.getElementById('add-popup').style.top=Math.max(90,Math.min(cy-10,window.innerHeight-380))+'px';
+  document.getElementById('add-popup').classList.add('vis');
+  setTimeout(()=>document.getElementById('ap-name').focus(),50);
+}
+function cancelAdd(){document.getElementById('add-popup').classList.remove('vis');pendImgs=[];editingId=null;document.getElementById('img-preview-strip').innerHTML='';}
+async function confirmAdd(){
+  const name=document.getElementById('ap-name').value.trim();
+  const note=document.getElementById('ap-note').value.trim();
+  const images=pendImgs.map(p=>p.dataUrl);
+  if(editingId){
+    const m=curMarkers().find(m=>m.id===editingId);
+    if(m){ m.name=name;m.note=note;m.images=images; if(m.el){m.el.remove();m.el=createMarkerEl(m);mkLayer.appendChild(m.el)} refreshSidebar(); }
+    cancelAdd();closeDetail();
+  } else { addMarker({type:selType_,x:pendX,y:pendY,name,note,images}); cancelAdd(); }
+  await saveMarkersToGitHub(regions.map(r=>({id:r.id,name:r.name,mapFile:r.mapFile,markers:r.markers.map(({id,type,x,y,name,note,images})=>({id,type,x,y,name,note,images:images||[]}))})));
+}
+
+// ── 마커 CRUD ─────────────────────────────────────────────────
+function addMarker({type,x,y,name,note,images,id}){
+  id=id||(Date.now()+'_'+Math.random().toString(36).slice(2));
+  const m={id,type,x,y,name:name||'',note:note||'',images:images||[]};
+  curMarkers().push(m);
+  m.el=createMarkerEl(m);
+  mkLayer.appendChild(m.el);
+  refreshSidebar();renderTabs();
+  return m;
+}
+async function removeMarker(id){
+  const r=curRegion();if(!r)return;
+  const idx=r.markers.findIndex(m=>m.id===id);
+  if(idx<0)return;
+  r.markers[idx].el?.remove();
+  r.markers.splice(idx,1);
+  if(focusedId===id)focusedId=null;
+  refreshSidebar();renderTabs();
+  await saveMarkersToGitHub(regions.map(r=>({id:r.id,name:r.name,mapFile:r.mapFile,markers:r.markers.map(({id,type,x,y,name,note,images})=>({id,type,x,y,name,note,images:images||[]}))})));
+}
+function editMarker(id){const m=curMarkers().find(m=>m.id===id);if(!m)return;pendX=m.x;pendY=m.y;closeDetail();openAddPopup(window.innerWidth/2,window.innerHeight/2,id);}
+
+// ── 마커 DOM ─────────────────────────────────────────────────
+function chestSVG(sz=28){return `<svg width="${sz}" height="${Math.round(sz*.75)}" viewBox="0 0 32 24" fill="none"><rect x="2" y="10" width="28" height="12" rx="2" fill="#8B5E2A" stroke="#f0b020" stroke-width="1.5"/><path d="M2 12 Q2 4 16 4 Q30 4 30 12Z" fill="#A0722A" stroke="#f0b020" stroke-width="1.5"/><path d="M6 10 Q16 6 26 10" stroke="#f0d050" stroke-width="1" opacity="0.5"/><rect x="12" y="13" width="8" height="6" rx="1" fill="#d4940a" stroke="#f0b020" stroke-width="1"/><circle cx="16" cy="16" r="1.5" fill="#0e0a1e"/><rect x="15" y="17" width="2" height="2" fill="#0e0a1e"/><line x1="2" y1="16" x2="11" y2="16" stroke="#f0b020" stroke-width="1"/><line x1="21" y1="16" x2="30" y2="16" stroke="#f0b020" stroke-width="1"/><rect x="3" y="10" width="4" height="3" rx="1" fill="#d4940a" stroke="#f0b020" stroke-width=".8"/><rect x="25" y="10" width="4" height="3" rx="1" fill="#d4940a" stroke="#f0b020" stroke-width=".8"/></svg>`;}
+
+function createMarkerEl(m){
+  const div=document.createElement('div');
+  div.className=`map-marker mt-${m.type}`;
+  div.dataset.id=m.id;
+  div.style.left=m.x+'px'; div.style.top=m.y+'px';
+  const t=TYPES[m.type];
+  const icoHtml=m.type==='chest'?chestSVG(28):`<span class="mk-ico">${t.emoji}</span>`;
+  const lblHtml=m.name?`<span class="mk-lbl">${esc(m.name)}</span>`:'';
+  const dotHtml=(m.images?.length>0)?`<span class="img-dot"></span>`:'';
+  const coordHtml=`<span class="mk-coord">${m.x}, ${m.y}</span>`;
+  div.innerHTML=`<div class="mk-pin"><div class="mk-bubble">${dotHtml}${icoHtml}${lblHtml}${coordHtml}</div><div class="mk-tail"></div></div>`;
+
+  // 드래그 (관리자 이동 모드)
+  let dActive=false,dMoved=false,dSX=0,dSY=0;
+  div.addEventListener('mousedown',(e)=>{
+    if(mode!=='move'||!isAdmin)return;
+    if(e.button!==0)return;
+    e.stopPropagation();e.preventDefault();
+    dActive=true;dMoved=false;dSX=e.clientX;dSY=e.clientY;
+    div.style.opacity='0.75';div.style.zIndex='200';hideTip();
+  });
+  window.addEventListener('mousemove',(ev)=>{
+    if(!dActive)return;
+    const dx=ev.clientX-dSX,dy=ev.clientY-dSY;
+    if(Math.abs(dx)>4||Math.abs(dy)>4)dMoved=true;
+    if(!dMoved)return;
+    const nx=m.x+dx/zoom,ny=m.y+dy/zoom;
+    div.style.left=nx+'px';div.style.top=ny+'px';
+    div.querySelector('.mk-coord').textContent=`${Math.round(nx)}, ${Math.round(ny)}`;
+  });
+  window.addEventListener('mouseup',async(ev)=>{
+    if(!dActive)return;dActive=false;
+    div.style.opacity='';div.style.zIndex='';
+    if(dMoved){
+      const dx=ev.clientX-dSX,dy=ev.clientY-dSY;
+      m.x=Math.round(Math.max(0,Math.min(3000,m.x+dx/zoom)));
+      m.y=Math.round(Math.max(0,Math.min(3000,m.y+dy/zoom)));
+      div.style.left=m.x+'px';div.style.top=m.y+'px';
+      div.querySelector('.mk-coord').textContent=`${m.x}, ${m.y}`;
+      const si=document.querySelector(`.sb-item[data-id="${m.id}"] .si-coord`);
+      if(si)si.textContent=`X:${m.x} Y:${m.y}`;
+      if(currentDetailId===m.id) document.getElementById('dp-coord').textContent=`X: ${m.x},  Y: ${m.y}`;
+      updateMM();
+      await saveMarkersToGitHub(regions.map(r=>({id:r.id,name:r.name,mapFile:r.mapFile,markers:r.markers.map(({id,type,x,y,name,note,images})=>({id,type,x,y,name,note,images:images||[]}))})));
+    }
+  });
+
+  div.addEventListener('click',(e)=>{
+    e.stopPropagation();
+    if(dMoved){dMoved=false;return}
+    if(mode==='delete'&&isAdmin){removeMarker(m.id);return}
+    focusMarker(m.id); openDetail(m,e.clientX,e.clientY);
+  });
+  div.addEventListener('mouseenter',(e)=>{showTip(m,e.clientX,e.clientY);});
+  div.addEventListener('mouseleave',hideTip);
+  return div;
+}
+
+// ── 포커스 ────────────────────────────────────────────────────
+function focusMarker(id){
+  if(focusedId){
+    curMarkers().find(m=>m.id===focusedId)?.el?.classList.remove('focused');
+    document.querySelector(`.sb-item[data-id="${focusedId}"]`)?.classList.remove('focused');
+  }
+  focusedId=id;
+  const m=curMarkers().find(m=>m.id===id);
+  m?.el?.classList.add('focused');
+  const si=document.querySelector(`.sb-item[data-id="${id}"]`);
+  if(si){si.classList.add('focused');si.scrollIntoView({block:'nearest'})}
+}
+
+// ── Detail popup ──────────────────────────────────────────────
+function openDetail(m,cx,cy){
+  currentDetailId=m.id;
+  const t=TYPES[m.type];
+  document.getElementById('dp-title').textContent=`${m.type==='chest'?'🟡':t.emoji} ${m.name||t.label}`;
+  document.getElementById('dp-coord').textContent=`X: ${m.x},  Y: ${m.y}`;
+  const noteEl=document.getElementById('dp-note');
+  if(m.note){noteEl.textContent=m.note;noteEl.style.display='';}else{noteEl.style.display='none';}
+  const imgsEl=document.getElementById('dp-imgs');
+  imgsEl.innerHTML='';
+  (m.images||[]).forEach((src,i)=>{
+    const d=document.createElement('div');d.className='dp-img-thumb';
+    d.innerHTML=`<img src="${src}"/>`;d.onclick=()=>openLB(m.images,i,m.name||t.label);imgsEl.appendChild(d);
+  });
+  const acts=document.getElementById('dp-actions');
+  acts.innerHTML=isAdmin
+    ?`<button class="dp-btn-edit" onclick="editMarker('${m.id}')">✏️ 편집</button>
+      <button class="dp-btn-del" onclick="removeMarker('${m.id}');closeDetail()">🗑 삭제</button>`
+    :'';
+  const pw=320;
+  document.getElementById('detail-popup').style.left=Math.max(4,Math.min(cx+12,window.innerWidth-pw-10))+'px';
+  document.getElementById('detail-popup').style.top=Math.max(90,Math.min(cy-10,window.innerHeight-300))+'px';
+  document.getElementById('detail-popup').classList.add('vis');
+}
+function closeDetail(){document.getElementById('detail-popup').classList.remove('vis');currentDetailId=null;}
+function copyCoord(){
+  const m=curMarkers().find(m=>m.id===currentDetailId);if(!m)return;
+  const txt=`X: ${m.x},  Y: ${m.y}`;
+  navigator.clipboard.writeText(txt).then(()=>showToast('📋 좌표 복사됨')).catch(()=>prompt('좌표:',txt));
+}
+
+// ── Tooltip ───────────────────────────────────────────────────
+function showTip(m,cx,cy){
+  const t=TYPES[m.type];
+  document.getElementById('tip-title').textContent=`${m.type==='chest'?'🟡':t.emoji} ${m.name||t.label}`;
+  document.getElementById('tip-note').textContent=m.note?(m.note.length>60?m.note.slice(0,60)+'…':m.note):'';
+  const cnt=m.images?.length||0;
+  document.getElementById('tip-imgs').textContent=cnt?`📷 사진 ${cnt}장`:'';
+  document.getElementById('info-tip').style.left=Math.min(cx+14,window.innerWidth-230)+'px';
+  document.getElementById('info-tip').style.top=Math.min(cy+14,window.innerHeight-90)+'px';
+  document.getElementById('info-tip').classList.add('vis');
+}
+function hideTip(){document.getElementById('info-tip').classList.remove('vis')}
+
+// ── Lightbox ──────────────────────────────────────────────────
+function openLB(imgs,idx,title){
+  lbImgs=imgs;lbIdx=idx;
+  document.getElementById('lb-img').src=imgs[idx];
+  document.getElementById('lb-caption').textContent=title?`${title} (${idx+1}/${imgs.length})`:`${idx+1}/${imgs.length}`;
+  document.getElementById('lb-prev').style.display=imgs.length>1?'flex':'none';
+  document.getElementById('lb-next').style.display=imgs.length>1?'flex':'none';
+  document.getElementById('lightbox').classList.add('vis');
+}
+function closeLB(){document.getElementById('lightbox').classList.remove('vis')}
+function lbNav(d){lbIdx=(lbIdx+d+lbImgs.length)%lbImgs.length;document.getElementById('lb-img').src=lbImgs[lbIdx];document.getElementById('lb-caption').textContent=`${lbIdx+1}/${lbImgs.length}`;}
+
+// ── Sidebar ───────────────────────────────────────────────────
+function refreshSidebar(){
+  const wrap=document.getElementById('sb-list-wrap');
+  const ms=curMarkers();
+  if(!ms.length){wrap.innerHTML='<div id="sb-empty">마커가 없습니다.</div>';updateStats();return;}
+  const groups={};
+  ms.forEach(m=>{if(!groups[m.type])groups[m.type]=[];groups[m.type].push(m)});
+  let html='';
+  for(const [type,list] of Object.entries(groups)){
+    const t=TYPES[type];
+    html+=`<div class="sb-group-title">${t.label} (${list.length})</div>`;
+    list.forEach(m=>{
+      const ico=type==='chest'?chestSVG(15):`<span class="si-ico">${t.emoji}</span>`;
+      const imgB=(m.images?.length>0)?`<span class="si-img-badge">📷${m.images.length}</span>`:'';
+      const delBtn=isAdmin?`<button class="si-del" onclick="event.stopPropagation();removeMarker('${m.id}')">✕</button>`:'';
+      html+=`<div class="sb-item${focusedId===m.id?' focused':''}" data-id="${m.id}" onclick="sbClick('${m.id}')">
+        ${ico}<div class="si-info"><div class="si-name">${esc(m.name||t.label)}</div><div class="si-coord">X:${m.x} Y:${m.y}</div></div>
+        ${imgB}${delBtn}</div>`;
+    });
+  }
+  wrap.innerHTML=html;
+  updateStats();
+}
+function sbClick(id){
+  const m=curMarkers().find(m=>m.id===id);if(!m)return;
+  focusMarker(id);
+  panToCoord(m.x, m.y);
+  openDetail(m, vp.clientWidth/2+270, vp.clientHeight/2);
+}
+function panToCoord(x,y,regionId){
+  if(regionId&&regionId!==curRegionId) switchRegion(regionId);
+  panX=vp.clientWidth/2-x*zoom; panY=vp.clientHeight/2-y*zoom;
+  clampPan();applyTrans();
+}
+function updateStats(){
+  for(const t of Object.keys(TYPES)){const el=document.getElementById('st-'+t);if(el)el.textContent=curMarkers().filter(m=>m.type===t).length;}
+}
+
+// ── Zoom/Pan ──────────────────────────────────────────────────
+function applyTrans(){cont.style.transform=`translate(${panX}px,${panY}px) scale(${zoom})`;document.getElementById('zoom-pct').textContent=Math.round(zoom*100)+'%';updateMM();}
+function clampPan(){const vw=vp.clientWidth,vh=vp.clientHeight,mw=3000*zoom,mh=3000*zoom;panX=Math.max(Math.min(0,vw-mw),Math.min(0,panX));panY=Math.max(Math.min(0,vh-mh),Math.min(0,panY));}
+function zoomAt(cx,cy,nz){nz=Math.max(0.12,Math.min(3,nz));const f=nz/zoom;panX=cx-f*(cx-panX);panY=cy-f*(cy-panY);zoom=nz;clampPan();applyTrans();}
+function zoomIn(){zoomAt(vp.clientWidth/2,vp.clientHeight/2,zoom+0.14)}
+function zoomOut(){zoomAt(vp.clientWidth/2,vp.clientHeight/2,zoom-0.14)}
+function zoomReset(){zoom=0.30;panX=(vp.clientWidth-3000*zoom)/2;panY=(vp.clientHeight-3000*zoom)/2;clampPan();applyTrans();}
+function s2m(sx,sy){const r=vp.getBoundingClientRect();return{x:(sx-r.left-panX)/zoom,y:(sy-r.top-panY)/zoom};}
+
+let pinchD0=null,pinchZ0=null,pinchMX=0,pinchMY=0;
+function startPan(x,y){isPan=true;panMoved=false;panSX=x;panSY=y;panOX=panX;panOY=panY;}
+function doPan(x,y){const dx=x-panSX,dy=y-panSY;if(Math.abs(dx)>3||Math.abs(dy)>3)panMoved=true;panX=panOX+dx;panY=panOY+dy;clampPan();applyTrans();}
+
+vp.addEventListener('mousedown',(e)=>{if(e.button===1||e.button===2){startPan(e.clientX,e.clientY);e.preventDefault();}else if(e.button===0&&e.altKey){startPan(e.clientX,e.clientY);}});
+vp.addEventListener('contextmenu',(e)=>e.preventDefault());
+window.addEventListener('mousemove',(e)=>{
+  const{x,y}=s2m(e.clientX,e.clientY);
+  if(x>=0&&y>=0&&x<=3000&&y<=3000)coordEl.innerHTML=`X: ${Math.round(x)} &nbsp; Y: ${Math.round(y)}`;
+  if(isPan)doPan(e.clientX,e.clientY);
+});
+window.addEventListener('mouseup',()=>{isPan=false;});
+vp.addEventListener('wheel',(e)=>{e.preventDefault();zoomAt(e.clientX,e.clientY,zoom+(e.deltaY<0?0.14:-0.14));},{passive:false});
+vp.addEventListener('touchstart',(e)=>{e.preventDefault();if(e.touches.length===1){startPan(e.touches[0].clientX,e.touches[0].clientY);}else if(e.touches.length===2){const t1=e.touches[0],t2=e.touches[1];pinchD0=Math.hypot(t2.clientX-t1.clientX,t2.clientY-t1.clientY);pinchZ0=zoom;pinchMX=(t1.clientX+t2.clientX)/2;pinchMY=(t1.clientY+t2.clientY)/2;isPan=false;}},{passive:false});
+vp.addEventListener('touchmove',(e)=>{e.preventDefault();if(e.touches.length===1&&isPan)doPan(e.touches[0].clientX,e.touches[0].clientY);else if(e.touches.length===2&&pinchD0!==null){const t1=e.touches[0],t2=e.touches[1];zoomAt(pinchMX,pinchMY,pinchZ0*Math.hypot(t2.clientX-t1.clientX,t2.clientY-t1.clientY)/pinchD0);}},{passive:false});
+vp.addEventListener('touchend',(e)=>{
+  if(e.touches.length<2)pinchD0=null;
+  if(e.touches.length===0){
+    if(!panMoved&&isPan&&mode==='report'){const t=e.changedTouches[0];const{x,y}=s2m(t.clientX,t.clientY);openReportPopup(t.clientX,t.clientY,Math.round(x),Math.round(y));}
+    else if(!panMoved&&isPan&&mode==='add'&&isAdmin){const t=e.changedTouches[0];const{x,y}=s2m(t.clientX,t.clientY);pendX=Math.round(x);pendY=Math.round(y);openAddPopup(t.clientX,t.clientY);}
+    isPan=false;
+  }
+});
+
+// ── Minimap ───────────────────────────────────────────────────
+function updateMM(){
+  const mw=mmCanvas.width,mh=mmCanvas.height;
+  mmCtx.clearRect(0,0,mw,mh);
+  try{mmCtx.drawImage(mmImg,0,0,mw,mh)}catch(e){}
+  curMarkers().forEach(m=>{const t=TYPES[m.type];const mx=m.x/3000*mw,my=m.y/3000*mh;mmCtx.beginPath();mmCtx.arc(mx,my,3,0,Math.PI*2);mmCtx.fillStyle=t.color;mmCtx.fill();mmCtx.strokeStyle='#000';mmCtx.lineWidth=0.8;mmCtx.stroke();});
+  const vw=vp.clientWidth,vh=vp.clientHeight;
+  const vpX=Math.max(0,-panX/zoom/3000*mw),vpY=Math.max(0,-panY/zoom/3000*mh);
+  const vpW=Math.min(mw-vpX,vw/zoom/3000*mw),vpH=Math.min(mh-vpY,vh/zoom/3000*mh);
+  const sc=mmCanvas.offsetWidth/mw;
+  mmVP.style.left=(vpX*sc)+'px';mmVP.style.top=(vpY*sc)+'px';mmVP.style.width=(vpW*sc)+'px';mmVP.style.height=(vpH*sc)+'px';
+}
+document.getElementById('mm-wrap').addEventListener('click',(e)=>{
+  const r=mmCanvas.getBoundingClientRect();
+  panX=vp.clientWidth/2-(e.clientX-r.left)/r.width*3000*zoom;
+  panY=vp.clientHeight/2-(e.clientY-r.top)/r.height*3000*zoom;
+  clampPan();applyTrans();
+});
+
+// ── IO ────────────────────────────────────────────────────────
+function closeIO(){document.getElementById('io-modal').classList.remove('vis')}
+
+// ── Keyboard ─────────────────────────────────────────────────
+document.addEventListener('keydown',(e)=>{
+  if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA')return;
+  if(e.key==='Escape'){cancelAdd();cancelReport();closeDetail();setMode(isAdmin?'add':'view');}
+  if(e.key==='+'||e.key==='=')zoomIn();
+  if(e.key==='-')zoomOut();
+  if(e.key==='0')zoomReset();
+  if(e.key==='ArrowLeft'&&document.getElementById('lightbox').classList.contains('vis'))lbNav(-1);
+  if(e.key==='ArrowRight'&&document.getElementById('lightbox').classList.contains('vis'))lbNav(1);
+});
+document.getElementById('ap-name').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();confirmAdd();}if(e.key==='Escape')cancelAdd();});
+document.getElementById('am-pass').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();confirmAdminLogin();}});
+
+// ── Utility ───────────────────────────────────────────────────
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+// ── Init ─────────────────────────────────────────────────────
+window.addEventListener('load', async ()=>{
+  // 관리자 세션 복원
+  loadAdminSession();
+
+  // markers.json 로드 (GitHub Raw)
+  const data=await loadMarkersFromGitHub();
+  if(data&&Array.isArray(data)&&data.length>0){
+    regions=data.map(r=>({...r,markers:r.markers||[]}));
+  } else {
+    regions=[{id:'region_lioness',name:'1. 페네스 호반 (리오네스)',mapFile:'map_lioness.png',markers:[]}];
+  }
+  curRegionId=regions[0].id;
+
+  const r=curRegion();
+  if(r){
+    mapImg.src=r.mapFile; mmImg.src=r.mapFile;
+    r.markers.forEach(m=>{m.el=createMarkerEl(m);mkLayer.appendChild(m.el)});
+  }
+  renderTabs(); refreshSidebar(); zoomReset();
+  if(!isAdmin) setMode('view');
+});
+window.addEventListener('resize',()=>{clampPan();applyTrans();});
+</script>
+</body>
+</html>
