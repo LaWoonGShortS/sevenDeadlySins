@@ -396,6 +396,8 @@ body{
   <!-- 일반 사용자 버튼 -->
   <button class="tb-btn report-btn" id="btn-report" onclick="setMode('report')">📍 위치 제보하기</button>
   <div class="tb-spacer"></div>
+  <!-- 저장 상태 표시 -->
+  <div id="save-status" style="display:none;font-size:10px;padding:3px 8px;border-radius:5px;border:1px solid #3a6030;background:#0d1e0d;color:#60c060"></div>
   <div id="admin-badge">👑 관리자 모드</div>
   <button class="tb-btn" id="btn-admin-login" onclick="openAdminLogin()" style="font-size:11px">🔑 관리자</button>
   <button class="tb-btn" id="btn-admin-logout" onclick="adminLogout()" style="display:none;font-size:11px">🔓 로그아웃</button>
@@ -645,7 +647,8 @@ let focusedId=null, currentDetailId=null, editingId=null;
 let lbImgs=[], lbIdx=0;
 let isAdmin=false;
 let ghToken='', ghRepo=DEFAULT_REPO;
-let pendingReports=[];  // GitHub Issues에서 불러온 제보 목록
+let pendingReports=[];   // GitHub Issues에서 불러온 제보 목록
+let pendingSaveData=null; // 로그인 전 저장 시도한 데이터 임시 보관
 
 // ── DOM ──────────────────────────────────────────────────────
 const vp=document.getElementById('map-vp');
@@ -716,6 +719,11 @@ function confirmAdminLogin(){
   closeAdminLogin();
   setAdminUI(true);
   showToast('✅ 관리자 로그인 완료');
+  // 로그인 전 저장 대기 중인 데이터 있으면 즉시 저장
+  if(pendingSaveData){
+    const d=pendingSaveData; pendingSaveData=null;
+    saveMarkersToGitHub(d);
+  }
 }
 function adminLogout(){
   localStorage.removeItem(ADMIN_KEY);
@@ -774,7 +782,17 @@ async function saveMarkersToGitHub(data){
   // 항상 localStorage에 먼저 백업 (데이터 유실 방지)
   try{ localStorage.setItem(LS_MARKERS_KEY, JSON.stringify(data)); }catch(e){}
 
-  if(!ghToken){ showToast('⚠️ 관리자 로그인 필요 — 로컬 백업만 저장됨','#f0a030'); return false; }
+  const statusEl=document.getElementById('save-status');
+  if(statusEl){ statusEl.style.display=''; statusEl.textContent='💾 저장 중...'; statusEl.style.color='#f0c040'; statusEl.style.borderColor='#604020'; }
+
+  if(!ghToken){
+    // 토큰 없으면 자동으로 로그인 팝업 띄우고, 저장 대기
+    if(statusEl){ statusEl.textContent='⚠️ 로그인 필요'; statusEl.style.color='#f08040'; statusEl.style.borderColor='#604020'; }
+    showToast('⚠️ GitHub Token 필요 — 로그인 후 자동 저장됩니다','#f0a030');
+    pendingSaveData = data;  // 로그인 후 재시도할 데이터 보관
+    openAdminLogin();
+    return false;
+  }
   try{
     const [owner,repo]=ghRepo.split('/');
     const path=`/repos/${owner}/${repo}/contents/${MARKERS_PATH}`;
@@ -788,10 +806,12 @@ async function saveMarkersToGitHub(data){
     const body={message:'chore: 마커 데이터 업데이트', content, sha: sha||undefined};
     if(!sha) delete body.sha;
     await ghFetch('PUT', path, body);
-    showToast('✅ GitHub에 저장됨 (영구 보존)');
+    if(statusEl){ statusEl.textContent='✅ GitHub 저장됨'; statusEl.style.color='#60c060'; statusEl.style.borderColor='#3a6030'; setTimeout(()=>{statusEl.style.display='none'},3000); }
+    showToast('✅ GitHub 저장 완료 — 새로고침해도 유지됩니다');
     return true;
   }catch(e){
-    showToast('⚠️ GitHub 저장 실패 (로컬 백업은 유지): '+e.message,'#e05050');
+    if(statusEl){ statusEl.textContent='❌ 저장 실패'; statusEl.style.color='#e05050'; statusEl.style.borderColor='#601020'; }
+    showToast('❌ GitHub 저장 실패: '+e.message+' (토큰 만료 여부 확인)','#e05050');
     return false;
   }
 }
