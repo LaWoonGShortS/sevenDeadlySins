@@ -127,6 +127,26 @@ body{
 #sb-list-wrap::-webkit-scrollbar{width:4px}
 #sb-list-wrap::-webkit-scrollbar-thumb{background:#3e2d6e;border-radius:2px}
 .sb-group-title{padding:8px 12px 3px;font-size:10px;color:#5e4e88;text-transform:uppercase;letter-spacing:1px;}
+
+/* ══ 타입 필터 탭 ══ */
+#type-filter-bar{
+  display:flex;flex-wrap:wrap;gap:4px;padding:7px 8px 5px;
+  border-bottom:1px solid #2e1f50;background:#0a0818;flex-shrink:0;
+}
+.tf-btn{
+  display:flex;align-items:center;gap:3px;
+  background:#150f2a;border:1px solid #3a2860;color:#9080c0;
+  border-radius:5px;padding:3px 7px;font-size:10px;cursor:pointer;
+  transition:all .15s;font-family:inherit;white-space:nowrap;
+}
+.tf-btn:hover{background:#1e1440;border-color:#6040a0;color:#c0a8e8}
+.tf-btn.active{background:#2a1a50;border-color:#8060c8;color:#e0d0ff;font-weight:600}
+.tf-btn .tf-cnt{
+  background:#3a2860;border-radius:3px;padding:0 4px;font-size:9px;
+  min-width:14px;text-align:center;color:#a090d0;
+}
+.tf-btn.active .tf-cnt{background:#5040a0;color:#e0d0ff}
+
 .sb-item{
   display:flex;align-items:center;gap:7px;padding:5px 10px;
   margin:1px 5px;border-radius:6px;cursor:pointer;transition:background .14s;
@@ -446,6 +466,16 @@ body{
     </div>
 
     <!-- 마커 목록 -->
+    <!-- 타입 필터 탭 -->
+    <div id="type-filter-bar">
+      <button class="tf-btn active" data-filter="all" onclick="setTypeFilter('all')">전체 <span class="tf-cnt" id="tf-cnt-all">0</span></button>
+      <button class="tf-btn" data-filter="chest" onclick="setTypeFilter('chest')"><svg width="14" height="11" viewBox="0 0 32 24" fill="none"><rect x="2" y="10" width="28" height="12" rx="2" fill="#8B5E2A" stroke="#f0b020" stroke-width="1.5"/><path d="M2 12 Q2 4 16 4 Q30 4 30 12Z" fill="#A0722A" stroke="#f0b020" stroke-width="1.5"/></svg>상자 <span class="tf-cnt" id="tf-cnt-chest">0</span></button>
+      <button class="tf-btn" data-filter="boss" onclick="setTypeFilter('boss')">💀보스 <span class="tf-cnt" id="tf-cnt-boss">0</span></button>
+      <button class="tf-btn" data-filter="npc" onclick="setTypeFilter('npc')">👤NPC <span class="tf-cnt" id="tf-cnt-npc">0</span></button>
+      <button class="tf-btn" data-filter="quest" onclick="setTypeFilter('quest')">❗퀘스트 <span class="tf-cnt" id="tf-cnt-quest">0</span></button>
+      <button class="tf-btn" data-filter="portal" onclick="setTypeFilter('portal')">🌀포탈 <span class="tf-cnt" id="tf-cnt-portal">0</span></button>
+      <button class="tf-btn" data-filter="note" onclick="setTypeFilter('note')">📝메모 <span class="tf-cnt" id="tf-cnt-note">0</span></button>
+    </div>
     <div id="sb-list-wrap">
       <div id="sb-empty">마커가 없습니다.</div>
     </div>
@@ -649,6 +679,7 @@ let isAdmin=false;
 let ghToken='', ghRepo=DEFAULT_REPO;
 let pendingReports=[];   // GitHub Issues에서 불러온 제보 목록
 let pendingSaveData=null; // 로그인 전 저장 시도한 데이터 임시 보관
+let activeTypeFilter='all'; // 사이드바 타입 필터
 
 // ── DOM ──────────────────────────────────────────────────────
 const vp=document.getElementById('map-vp');
@@ -1024,6 +1055,9 @@ function switchRegion(id){
   mkLayer.innerHTML=''; clearPendingMarkers();
   focusedId=null; closeDetail(); cancelAdd(); cancelReport();
   curRegionId=id;
+  // 지역 전환 시 필터 초기화
+  activeTypeFilter='all';
+  document.querySelectorAll('.tf-btn').forEach(b=>b.classList.toggle('active', b.dataset.filter==='all'));
   const r=curRegion(); if(!r) return;
   mapImg.src=r.mapFile;
   mmImg.src=r.mapFile;
@@ -1321,13 +1355,31 @@ function openLB(imgs,idx,title){
 function closeLB(){document.getElementById('lightbox').classList.remove('vis')}
 function lbNav(d){lbIdx=(lbIdx+d+lbImgs.length)%lbImgs.length;document.getElementById('lb-img').src=lbImgs[lbIdx];document.getElementById('lb-caption').textContent=`${lbIdx+1}/${lbImgs.length}`;}
 
+// ── 타입 필터 ─────────────────────────────────────────────────
+function setTypeFilter(type){
+  activeTypeFilter=type;
+  document.querySelectorAll('.tf-btn').forEach(b=>b.classList.toggle('active', b.dataset.filter===type));
+  // 맵 마커 표시/숨김
+  curMarkers().forEach(m=>{
+    if(m.el) m.el.style.display=(type==='all'||m.type===type)?'':'none';
+  });
+  refreshSidebar();
+}
+
 // ── Sidebar ───────────────────────────────────────────────────
 function refreshSidebar(){
   const wrap=document.getElementById('sb-list-wrap');
   const ms=curMarkers();
-  if(!ms.length){wrap.innerHTML='<div id="sb-empty">마커가 없습니다.</div>';updateStats();return;}
+  // 필터 카운트 업데이트
+  updateStats();
+  // 필터 적용
+  const filtered=activeTypeFilter==='all' ? ms : ms.filter(m=>m.type===activeTypeFilter);
+  if(!filtered.length){
+    wrap.innerHTML=`<div id="sb-empty">${activeTypeFilter==='all'?'마커가 없습니다.':TYPES[activeTypeFilter].label+' 마커가 없습니다.'}</div>`;
+    return;
+  }
   const groups={};
-  ms.forEach(m=>{if(!groups[m.type])groups[m.type]=[];groups[m.type].push(m)});
+  filtered.forEach(m=>{if(!groups[m.type])groups[m.type]=[];groups[m.type].push(m)});
   let html='';
   for(const [type,list] of Object.entries(groups)){
     const t=TYPES[type];
@@ -1342,7 +1394,6 @@ function refreshSidebar(){
     });
   }
   wrap.innerHTML=html;
-  updateStats();
 }
 function sbClick(id){
   const m=curMarkers().find(m=>m.id===id);if(!m)return;
@@ -1356,7 +1407,15 @@ function panToCoord(x,y,regionId){
   clampPan();applyTrans();
 }
 function updateStats(){
-  for(const t of Object.keys(TYPES)){const el=document.getElementById('st-'+t);if(el)el.textContent=curMarkers().filter(m=>m.type===t).length;}
+  const ms=curMarkers();
+  // 하단 통계
+  for(const t of Object.keys(TYPES)){const el=document.getElementById('st-'+t);if(el)el.textContent=ms.filter(m=>m.type===t).length;}
+  // 필터 탭 카운트
+  const allEl=document.getElementById('tf-cnt-all'); if(allEl) allEl.textContent=ms.length;
+  for(const t of Object.keys(TYPES)){
+    const el=document.getElementById('tf-cnt-'+t);
+    if(el) el.textContent=ms.filter(m=>m.type===t).length;
+  }
 }
 
 // ── Zoom/Pan ──────────────────────────────────────────────────
