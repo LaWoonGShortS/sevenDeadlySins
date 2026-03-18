@@ -829,15 +829,19 @@ async function refreshPending(){
   if(!isAdmin) return;
   try{
     const [owner,repo]=ghRepo.split('/');
+    // 라벨 필터 없이 전체 오픈 이슈 로드 (라벨 없이 제출된 제보도 인식)
     const issues=await ghFetch('GET',
-      `/repos/${owner}/${repo}/issues?state=open&labels=${encodeURIComponent(ISSUE_LABEL)}&per_page=50`);
-    pendingReports=issues.map(issue=>{
+      `/repos/${owner}/${repo}/issues?state=open&per_page=50`);
+    pendingReports=issues
+      .filter(issue=> issue.body && issue.body.includes('<!-- SDSO_REPORT'))  // 제보 이슈만 필터
+      .map(issue=>{
       // body에서 메타 파싱
       const meta={};
       const match=issue.body&&issue.body.match(/<!-- SDSO_REPORT\n([\s\S]*?)-->/);
       if(match){
         match[1].split('\n').forEach(line=>{
-          const [k,v]=line.split(':');
+          const [k,...rest]=line.split(':');
+          const v=rest.join(':');
           if(k&&v!==undefined) meta[k.trim()]=v.trim();
         });
       }
