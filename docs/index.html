@@ -752,16 +752,18 @@ const LS_MARKERS_KEY = 'sdso_markers_backup_v3';
 async function loadMarkersFromGitHub(){
   try{
     const [owner,repo]=ghRepo.split('/');
-    // cache bust
-    const url=`https://raw.githubusercontent.com/${owner}/${repo}/main/${MARKERS_PATH}?t=${Date.now()}`;
-    const res=await fetch(url);
-    if(!res.ok) throw new Error('markers.json 로드 실패');
+    // GitHub Contents API로 로드 (캐시 없음, 항상 최신 데이터)
+    const res=await fetch(
+      `https://api.github.com/repos/${owner}/${repo}/contents/${MARKERS_PATH}`,
+      {headers:{'Accept':'application/vnd.github.v3.raw', 'Cache-Control':'no-cache'}}
+    );
+    if(!res.ok) throw new Error('markers.json 로드 실패: '+res.status);
     const data=await res.json();
-    // GitHub에서 성공적으로 로드하면 localStorage에도 백업
+    // 로드 성공 시 localStorage에도 백업
     try{ localStorage.setItem(LS_MARKERS_KEY, JSON.stringify(data)); }catch(e){}
     return data;
   }catch(e){
-    console.warn('GitHub 로드 실패, localStorage 백업 사용:', e);
+    console.warn('GitHub API 로드 실패, localStorage 백업 사용:', e);
     // localStorage 백업에서 복원
     try{
       const saved=localStorage.getItem(LS_MARKERS_KEY);
